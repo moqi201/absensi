@@ -29,10 +29,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       final String email = _emailController.text.trim();
       // MEMANGGIL verifyOtp DENGAN OTP KOSONG SESUAI PERMINTAAN ANDA
-      final response = await _apiService.verifyOtp(
+      final response = await _apiService.forgotPassword(
         // <--- PERUBAHAN DI SINI
-        email: email,
-        otp: '', // Mengirim OTP kosong/string kosong untuk memicu pengiriman
+        email:
+            email, // Mengirim OTP kosong/string kosong untuk memicu pengiriman
       );
 
       setState(() {

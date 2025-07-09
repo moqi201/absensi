@@ -1,7 +1,6 @@
 // lib/screens/reset_password_screen.dart
 
-import 'dart:async'; // Import untuk menggunakan Timer
-
+import 'dart:async';
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/service/api_service.dart';
 import 'package:absensi/routes/app_router.dart';
@@ -39,13 +38,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    _startTimer(); // Mulai timer saat layar diinisialisasi
+    // Jika OTP sudah dikirim sebelum masuk layar ini, mulai timer.
+    // Jika layar ini adalah tempat OTP pertama kali dikirim, Anda mungkin ingin
+    // memicu _resendOtp() di sini juga. Tapi dari konteks, sepertinya OTP
+    // sudah dikirim di ForgotPasswordScreen.
+    _startTimer();
   }
 
   // --- Fungsi Timer ---
   void _startTimer() {
     _otpExpired = false; // Reset status kadaluarsa
     _currentSeconds = _startMinutes * 60; // Set total detik
+    _timer?.cancel(); // Pastikan timer sebelumnya dibatalkan jika ada
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_currentSeconds <= 0) {
         timer.cancel();
@@ -67,6 +71,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return '$minutes:$seconds';
   }
 
+  // --- FUNGSI UTAMA UNTUK TOMBOL RESET PASSWORD ---
   Future<void> _resetPasswordProcess() async {
     if (_formKey.currentState!.validate()) {
       if (_otpExpired) {
@@ -77,7 +82,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
           );
         }
-        return; // Hentikan proses jika OTP sudah kadaluarsa
+        return;
       }
 
       setState(() {
@@ -89,59 +94,35 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       final String newPassword = _newPasswordController.text.trim();
       final String confirmPassword = _confirmPasswordController.text.trim();
 
-      // Step 1: Verify OTP first (using the verifyOtp API)
-      final verifyResponse = await _apiService.verifyOtp(
+      // --- Panggil langsung API resetPassword ---
+      final resetResponse = await _apiService.resetPassword(
         email: email,
         otp: otp,
+        newPassword: newPassword,
+        newPasswordConfirmation: confirmPassword,
       );
 
-      if (verifyResponse.statusCode == 200) {
-        // Step 2: If OTP is successfully verified, proceed to reset password
-        final resetResponse = await _apiService.resetPassword(
-          email: email,
-          otp: otp, // OTP yang sama digunakan untuk reset
-          newPassword: newPassword,
-          newPasswordConfirmation: confirmPassword,
-        );
+      setState(() {
+        _isLoading = false;
+      });
 
-        setState(() {
-          _isLoading = false;
-        });
-
-        if (resetResponse.statusCode == 200) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  resetResponse.message ?? 'Password reset successfully!',
-                ),
+      if (resetResponse.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                resetResponse.message ?? 'Password reset successfully!',
               ),
-            );
-            Navigator.popUntil(context, ModalRoute.withName(AppRoutes.login));
-          }
-        } else {
-          String errorMessage =
-              resetResponse.message ?? 'Failed to reset password.';
-          if (resetResponse.errors != null) {
-            resetResponse.errors!.forEach((key, value) {
-              // Corrected from resetResponse.errors! to response.errors! if response is not explicitly defined in the scope
-              errorMessage += '\n$key: ${(value as List).join(', ')}';
-            });
-          }
-          if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(errorMessage)));
-          }
+            ),
+          );
+          Navigator.popUntil(context, ModalRoute.withName(AppRoutes.login));
         }
       } else {
-        // Handle errors from OTP verification API call
-        setState(() {
-          _isLoading = false;
-        });
-        String errorMessage = verifyResponse.message ?? 'Failed to verify OTP.';
-        if (verifyResponse.errors != null) {
-          verifyResponse.errors!.forEach((key, value) {
+        // Handle error dari resetPassword API
+        String errorMessage =
+            resetResponse.message ?? 'Failed to reset password.';
+        if (resetResponse.errors != null) {
+          resetResponse.errors!.forEach((key, value) {
             errorMessage += '\n$key: ${(value as List).join(', ')}';
           });
         }
@@ -154,16 +135,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     }
   }
 
+  // --- FUNGSI UNTUK MENGIRIM ULANG OTP ---
   Future<void> _resendOtp() async {
     setState(() {
       _isLoading = true;
     });
 
-    // Panggil verifyOtp dengan OTP kosong untuk meminta OTP ulang
-    final response = await _apiService.verifyOtp(
-      email: widget.email,
-      otp: '', // Mengirim OTP kosong untuk memicu pengiriman ulang
-    );
+    // Panggil API forgotPassword untuk meminta OTP ulang
+    final response = await _apiService.forgotPassword(email: widget.email);
 
     setState(() {
       _isLoading = false;
@@ -198,7 +177,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
-    _timer?.cancel(); // Batalkan timer saat widget dihapus
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -220,14 +199,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             children: [
               Text(
                 "Kode verifikasi telah dikirim ke **${widget.email}**. Masukkan kode dan password baru Anda.",
-                style: const TextStyle(
-                  fontSize: 16,
-                  color:
-                      AppColors
-                          .primary, // Ganti kembali ke AppColors.textPrimary
-                ),
+                style: const TextStyle(fontSize: 16, color: AppColors.primary),
               ),
-              const SizedBox(height: 10), // Spasi lebih sedikit
+              const SizedBox(height: 10),
+
               // --- Tampilan Timer ---
               Center(
                 child:
@@ -235,9 +210,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ? Text(
                           'OTP Kadaluarsa. Silakan minta ulang.',
                           style: TextStyle(
-                            color:
-                                AppColors
-                                    .error, // Gunakan warna merah untuk kadaluarsa
+                            color: AppColors.error,
                             fontWeight: FontWeight.bold,
                           ),
                         )
@@ -249,13 +222,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             color:
                                 _currentSeconds < 60
                                     ? AppColors.error
-                                    : AppColors
-                                        .primary, // Merah jika sisa kurang dari 1 menit
+                                    : AppColors.primary,
                           ),
                         ),
               ),
-              const SizedBox(height: 20), // Spasi setelah timer
+              const SizedBox(height: 20),
 
+              // --- Urutan Input Field Baru ---
               CustomInputField(
                 controller: _otpController,
                 hintText: 'Kode Verifikasi (OTP)',
@@ -272,26 +245,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              Center(
-                child: GestureDetector(
-                  onTap:
-                      _isLoading || !_otpExpired
-                          ? null
-                          : _resendOtp, // Tombol resend hanya aktif jika OTP sudah kadaluarsa dan tidak loading
-                  child: Text(
-                    "Tidak menerima kode? Kirim ulang OTP",
-                    style: TextStyle(
-                      color:
-                          _isLoading || !_otpExpired
-                              ? AppColors
-                                  .primary // Warna abu-abu jika tidak aktif atau loading
-                              : AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+
               CustomInputField(
                 controller: _newPasswordController,
                 hintText: 'Password Baru',
@@ -314,6 +268,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 },
               ),
               const SizedBox(height: 20),
+
               CustomInputField(
                 controller: _confirmPasswordController,
                 hintText: 'Konfirmasi Password Baru',
@@ -335,7 +290,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 10),
+
+              Center(
+                child: GestureDetector(
+                  onTap: _isLoading || !_otpExpired ? null : _resendOtp,
+                  child: Text(
+                    "Tidak menerima kode? Kirim ulang OTP",
+                    style: TextStyle(
+                      color:
+                          _isLoading || !_otpExpired
+                              ? AppColors.primary
+                              : AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 30),
+
               _isLoading
                   ? const Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
