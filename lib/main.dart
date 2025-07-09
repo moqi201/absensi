@@ -1,82 +1,58 @@
-// lib/main.dart
-import 'package:absensi/presentation/page/auth/login_page.dart';
-import 'package:absensi/presentation/page/auth/register_page.dart';
-import 'package:absensi/presentation/page/dashboard/dashboard_page.dart';
-import 'package:absensi/presentation/page/history/history_page.dart';
-import 'package:absensi/presentation/page/profil/edit_profile_page.dart';
-import 'package:absensi/presentation/page/profil/profile_page.dart'
-    hide ProfileProvider;
-import 'package:absensi/providers/profile_provider.dart'; // Jalur yang sudah benar
+import 'package:absensi/data/service/api_service.dart'; // Penting untuk inisialisasi ApiService
 import 'package:absensi/routes/app_router.dart';
+import 'package:absensi/screens/attendance/request_screen.dart';
+import 'package:absensi/screens/auth/forgot_password.dart';
+import 'package:absensi/screens/auth/login_screen.dart';
+import 'package:absensi/screens/auth/register_screen.dart';
+import 'package:absensi/screens/auth/reset_password.dart';
+import 'package:absensi/screens/main_bottom_navigation_bar.dart';
+import 'package:absensi/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:absensi/data/service/api_service.dart';
-// **PERBAIKAN JALUR IMPOR BERIKUT:**
-import 'package:absensi/providers/auth_provider.dart'; // Jalur diperbaiki
-import 'package:absensi/providers/attendance_provider.dart'; // Jalur diperbaiki
-import 'package:absensi/providers/theme_provider.dart'; // Jalur diperbaiki // Pastikan jalur ini benar untuk AppConstants
 
 void main() async {
+  // Tambahkan async
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null);
-
-  final prefs = await SharedPreferences.getInstance();
-  final apiService = ApiService();
-
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider<ApiService>(create: (_) => apiService),
-        ChangeNotifierProvider(
-          create:
-              (context) =>
-                  AuthProvider(Provider.of<ApiService>(context, listen: false)),
-        ),
-        ChangeNotifierProvider(
-          create:
-              (context) => AttendanceProvider(
-                Provider.of<ApiService>(context, listen: false),
-              ),
-        ),
-        ChangeNotifierProvider(
-          create:
-              (context) => ProfileProvider(
-                Provider.of<ApiService>(context, listen: false),
-              ),
-        ),
-        ChangeNotifierProvider(create: (_) => ThemeProvider(prefs)),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  await ApiService.init(); // Inisialisasi ApiService untuk persistensi token
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          title: AppConstants.appName,
-          theme: ThemeData.light(useMaterial3: true),
-          darkTheme: ThemeData.dark(useMaterial3: true),
-          themeMode: themeProvider.themeMode,
-          initialRoute: AppConstants.loginRoute,
-          routes: {
-            AppConstants.loginRoute: (context) =>  LoginPage(),
-            AppConstants.registerRoute: (context) =>  RegisterPage(),
-            AppConstants.dashboardRoute: (context) =>  DashboardPage(),
-            AppConstants.historyRoute: (context) =>  HistoryPage(),
-            AppConstants.profileRoute: (context) =>  ProfilePage(),
-            AppConstants.editProfileRoute: (context) =>  EditProfilePage(),
-          },
-        );
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      initialRoute: AppRoutes.initial,
+      routes: {
+        AppRoutes.initial: (context) => const SplashScreen(),
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.register: (context) => const RegisterScreen(),
+        AppRoutes.main: (context) => MainBottomNavigationBar(),
+        AppRoutes.request: (context) => RequestScreen(),
+        // Menambahkan rute untuk forgotPassword
+        AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
+        // Menambahkan rute untuk resetPassword
+        AppRoutes.resetPassword: (context) {
+          final String? email =
+              ModalRoute.of(context)?.settings.arguments as String?;
+          if (email != null) {
+            return ResetPasswordScreen(email: email);
+          }
+          // Fallback jika email tidak disediakan (misalnya, navigasi langsung tanpa argumen)
+          return const Text(
+            'Error: Email tidak disediakan untuk reset password.',
+          );
+        },
+        // AppRoutes.attendanceList: (context) => AttendanceListScreen(),
+        // AppRoutes.report: (context) => const PersonReportScreen(),
+        // AppRoutes.profile: (context) => const ProfileScreen(),
       },
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      ),
     );
   }
 }

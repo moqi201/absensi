@@ -1,14 +1,14 @@
-class AppConstants {
-  static const String appName = 'Absensi PPKD';
-  static const String loginRoute = '/login';
-  static const String registerRoute = '/register';
-  static const String dashboardRoute = '/dashboard';
-  static const String historyRoute = '/history';
-  static const String profileRoute = '/profile';
-  static const String editProfileRoute = '/edit-profile';
-
-  // SharedPreferences keys
-  static const String authTokenKey = 'auth_token';
-  static const String currentUserKey = 'current_user';
-  static const String themeModeKey = 'theme_mode'; // 'light' or 'dark'
+// Named routes config
+class AppRoutes {
+  static const initial = '/splash_screen';
+  static const login = '/login';
+  static const register = '/register';
+  static const main = '/main';
+  static const attendanceList = '/attendance/list';
+  static const request = '/request';
+  static const forgotPassword = '/forgot_password'; // Menambahkan rute ini
+  static const resetPassword = '/reset_password'; // Menambahkan rute ini
+  // The following routes are removed as they are now managed internally by MainScreen's IndexedStack
+  // static const report = '/report';
+  // static const profile = '/profile';
 }
