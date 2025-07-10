@@ -1,5 +1,5 @@
 // lib/models/app_models.dart
-
+import 'package:intl/intl.dart'; // <--- Tambahkan baris ini
 // Helper function to safely parse int from dynamic (could be int or string)
 int? _parseIntFromDynamic(dynamic value) {
   if (value is int) {
@@ -190,147 +190,207 @@ class User {
 }
 
 // --- Attendance Models ---
+// lib/data/models/absence.dart (atau di mana pun model Absence Anda didefinisikan)
+
+
 class Absence {
-  final int id;
-  final int userId;
-  final DateTime? checkIn; // Made nullable
-  final String? checkInLocation;
-  final String? checkInAddress; // Made nullable
-  final DateTime? checkOut;
-  final String? checkOutLocation;
+  final int? id;
+  final String? userId;
+  final String? attendanceDate;
+  final String? checkInTime;
+  final String? checkOutTime;
+  final String? checkInAddress;
   final String? checkOutAddress;
-  final String? status; // Made nullable
+  final double? checkInLat;  // <--- UBAH KE double?
+  final double? checkInLng;  // <--- UBAH KE double?
+  final double? checkOutLat; // <--- UBAH KE double?
+  final double? checkOutLng; // <--- UBAH KE double?
+  final String? status;
   final String? alasanIzin;
-  final DateTime? createdAt; // Made nullable
-  final DateTime? updatedAt; // Made nullable
-  final double? checkInLat;
-  final double? checkInLng;
-  final double? checkOutLat;
-  final double? checkOutLng;
+  final String? tanggalIzin;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? checkIn;
+  final DateTime? checkOut;
 
   Absence({
-    required this.id,
-    required this.userId,
-    this.checkIn, // Removed required
-    this.checkInLocation,
-    this.checkInAddress, // Removed required
-    this.checkOut,
-    this.checkOutLocation,
+    this.id,
+    this.userId,
+    this.attendanceDate,
+    this.checkInTime,
+    this.checkOutTime,
+    this.checkInAddress,
     this.checkOutAddress,
-    this.status, // Removed required
-    this.alasanIzin,
-    this.createdAt, // Removed required
-    this.updatedAt, // Removed required
     this.checkInLat,
     this.checkInLng,
     this.checkOutLat,
     this.checkOutLng,
+    this.status,
+    this.alasanIzin,
+    this.tanggalIzin,
+    this.createdAt,
+    this.updatedAt,
+    this.checkIn,
+    this.checkOut,
   });
-
   factory Absence.fromJson(Map<String, dynamic> json) {
-    return Absence(
-      id: _parseIntFromDynamic(json['id']) ?? 0, // Use helper
-      userId: _parseIntFromDynamic(json['user_id']) ?? 0, // Use helper
-      checkIn:
-          json['check_in'] !=
-                  null // Added null-check before parsing
-              ? DateTime.parse(json['check_in'] as String)
-              : null,
-      checkInLocation: json['check_in_location'] as String?,
-      checkInAddress:
-          json['check_in_address'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      checkOut:
-          json['check_out'] != null
-              ? DateTime.parse(json['check_out'] as String)
-              : null,
-      checkOutLocation: json['check_out_location'] as String?,
-      checkOutAddress: json['check_out_address'] as String?,
-      status:
-          json['status'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      alasanIzin: json['alasan_izin'] as String?,
-      createdAt:
-          json['created_at'] !=
-                  null // Added null-check before parsing
-              ? DateTime.parse(json['created_at'] as String)
-              : null,
-      updatedAt:
-          json['updated_at'] !=
-                  null // Added null-check before parsing
-              ? DateTime.parse(json['updated_at'] as String)
-              : null,
-      checkInLat: (json['check_in_lat'] as num?)?.toDouble(),
-      checkInLng: (json['check_in_lng'] as num?)?.toDouble(),
-      checkOutLat: (json['check_out_lat'] as num?)?.toDouble(),
-      checkOutLng: (json['check_out_lng'] as num?)?.toDouble(),
-    );
-  }
+    // Helper function to safely parse time strings to DateTime
+    DateTime? parseTime(String? dateStr, String? timeStr) {
+      if (dateStr == null || timeStr == null) return null;
+      try {
+        // Gabungkan tanggal dan waktu untuk membuat DateTime lengkap
+        return DateTime.parse('$dateStr $timeStr');
+      } catch (e) {
+        print('Error parsing date-time string: $e');
+        return null;
+      }
+    }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'user_id': userId,
-      'check_in': checkIn?.toIso8601String(),
-      'check_in_location': checkInLocation,
-      'check_in_address': checkInAddress,
-      'check_out': checkOut?.toIso8601String(),
-      'check_out_location': checkOutLocation,
-      'check_out_address': checkOutAddress,
-      'status': status,
-      'alasan_izin': alasanIzin,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-      'check_in_lat': checkInLat,
-      'check_in_lng': checkInLng,
-      'check_out_lat': checkOutLat,
-      'check_out_lng': checkOutLng,
-    };
+    // Helper function to format DateTime to H:i string
+    String? formatTimeToHi(String? dateTimeString) {
+      if (dateTimeString == null) return null;
+      try {
+        final DateTime dateTime = DateTime.parse(dateTimeString);
+        return DateFormat('H:mm').format(dateTime);
+      } catch (e) {
+        print('Error formatting time to H:mm: $e');
+        return dateTimeString; // Return original if parsing fails
+      }
+    }
+
+    // Asumsi API mengembalikan check_in_time dan check_out_time sebagai string,
+    // atau Anda akan memformat dari objek DateTime jika API hanya memberikan itu.
+
+    // Untuk parsing `checkIn` dan `checkOut` (tipe DateTime?):
+    // Jika API memberikan 'check_in' dan 'check_out' sebagai DateTime ISO string, gunakan ini:
+    DateTime? parsedCheckIn;
+    DateTime? parsedCheckOut;
+    try {
+      parsedCheckIn =
+          json['check_in'] != null ? DateTime.parse(json['check_in']) : null;
+      parsedCheckOut =
+          json['check_out'] != null ? DateTime.parse(json['check_out']) : null;
+    } catch (e) {
+      print('Error parsing check_in/check_out DateTime: $e');
+    }
+
+    // Mengambil string waktu langsung dari JSON jika tersedia,
+    // atau memformat dari DateTime yang sudah ada jika tidak.
+    String? checkInTimeString = json['check_in_time'] as String?;
+    String? checkOutTimeString = json['check_out_time'] as String?;
+
+    // Alternatif: Jika backend hanya memberikan `check_in` dan `check_out` sebagai DateTime,
+    // Anda bisa menghasilkan `checkInTime` dan `checkOutTime` (string H:i) dari sana:
+    if (checkInTimeString == null && parsedCheckIn != null) {
+      checkInTimeString = DateFormat('H:mm').format(parsedCheckIn.toLocal());
+    }
+    if (checkOutTimeString == null && parsedCheckOut != null) {
+      checkOutTimeString = DateFormat('H:mm').format(parsedCheckOut.toLocal());
+    }
+
+    return Absence(
+    id: json['id'] as int?,
+    userId: json['user_id'] as String?,
+    attendanceDate: json['attendance_date'] as String?,
+    checkInTime: checkInTimeString,
+    checkOutTime: checkOutTimeString,
+    checkInAddress: json['check_in_address'] as String?,
+    checkOutAddress: json['check_out_address'] as String?,
+    // Pastikan parsing ke double aman
+    checkInLat: (json['check_in_lat'] as num?)?.toDouble(), // <--- UBAH CARA PARSING INI
+    checkInLng: (json['check_in_lng'] as num?)?.toDouble(), // <--- UBAH CARA PARSING INI
+    checkOutLat: (json['check_out_lat'] as num?)?.toDouble(), // <--- UBAH CARA PARSING INI
+    checkOutLng: (json['check_out_lng'] as num?)?.toDouble(), // <--- UBAH CARA PARSING INI
+    status: json['status'] as String?,
+    alasanIzin: json['alasan_izin'] as String?,
+    tanggalIzin: json['tanggal_izin'] as String?,
+    createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+    updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+    checkIn: parsedCheckIn,
+    checkOut: parsedCheckOut,
+  );
   }
 }
 
 class AbsenceToday {
-  final String? tanggal; // Made nullable
-  final DateTime? jamMasuk; // Made nullable
+  final String? tanggal;
+  final DateTime? jamMasuk;
   final DateTime? jamKeluar;
-  final String? alamatMasuk; // Made nullable
+  final String? alamatMasuk;
   final String? alamatKeluar;
-  final String? status; // Made nullable
+  final String? status;
   final String? alasanIzin;
 
   AbsenceToday({
-    this.tanggal, // Removed required
-    this.jamMasuk, // Removed required
+    this.tanggal,
+    this.jamMasuk,
     this.jamKeluar,
-    this.alamatMasuk, // Removed required
+    this.alamatMasuk,
     this.alamatKeluar,
-    this.status, // Removed required
+    this.status,
     this.alasanIzin,
   });
 
   factory AbsenceToday.fromJson(Map<String, dynamic> json) {
+    // Ambil data dari key 'data' jika ada, atau gunakan map itu sendiri
+    // Ini berguna jika JSON dikirim dalam format { "message": "", "data": {...} }
+    final Map<String, dynamic> data =
+        json['data'] as Map<String, dynamic>? ?? json;
+
+    // Untuk jamMasuk dan jamKeluar, kita perlu menggabungkan tanggal (attendance_date)
+    // dengan waktu (check_in_time/check_out_time) untuk membuat objek DateTime.
+    final String? attendanceDateStr = data['attendance_date'] as String?;
+
+    DateTime? parsedJamMasuk;
+    if (attendanceDateStr != null && data['check_in_time'] != null) {
+      try {
+        // Gabungkan tanggal dengan waktu masuk, tambahkan ':00' untuk detik
+        parsedJamMasuk = DateTime.parse(
+          '$attendanceDateStr ${data['check_in_time'] as String}:00',
+        );
+      } catch (e) {
+        print('Error parsing jamMasuk: $e');
+        parsedJamMasuk = null;
+      }
+    }
+
+    DateTime? parsedJamKeluar;
+    if (attendanceDateStr != null && data['check_out_time'] != null) {
+      try {
+        // Gabungkan tanggal dengan waktu keluar, tambahkan ':00' untuk detik
+        parsedJamKeluar = DateTime.parse(
+          '$attendanceDateStr ${data['check_out_time'] as String}:00',
+        );
+      } catch (e) {
+        print('Error parsing jamKeluar: $e');
+        parsedJamKeluar = null;
+      }
+    }
+
     return AbsenceToday(
-      tanggal:
-          json['tanggal'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      jamMasuk:
-          json['jam_masuk'] !=
-                  null // Added null-check before parsing
-              ? DateTime.parse(json['jam_masuk'] as String)
-              : null,
-      jamKeluar:
-          json['jam_keluar'] != null
-              ? DateTime.parse(json['jam_keluar'] as String)
-              : null,
-      alamatMasuk:
-          json['alamat_masuk'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      alamatKeluar: json['alamat_keluar'] as String?,
-      status:
-          json['status'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      alasanIzin: json['alasan_izin'] as String?,
+      tanggal: data['attendance_date'] as String?,
+      jamMasuk: parsedJamMasuk,
+      jamKeluar: parsedJamKeluar,
+      alamatMasuk: data['check_in_address'] as String?,
+      alamatKeluar: data['check_out_address'] as String?,
+      status: data['status'] as String?,
+      alasanIzin: data['alasan_izin'] as String?,
     );
+  }
+
+  // Metode toJson (opsional, tambahkan jika Anda perlu mengonversi kembali ke JSON)
+  Map<String, dynamic> toJson() {
+    return {
+      'attendance_date': tanggal,
+      'check_in_time':
+          jamMasuk != null ? DateFormat('HH:mm').format(jamMasuk!) : null,
+      'check_out_time':
+          jamKeluar != null ? DateFormat('HH:mm').format(jamKeluar!) : null,
+      'check_in_address': alamatMasuk,
+      'check_out_address': alamatKeluar,
+      'status': status,
+      'alasan_izin': alasanIzin,
+    };
   }
 }
 

@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool hasCheckedIn = _todayAbsence?.jamMasuk != null;
     final bool hasCheckedOut = _todayAbsence?.jamKeluar != null;
 
-    return Scaffold(
+    return Scaffold(  
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
