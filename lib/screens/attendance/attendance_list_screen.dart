@@ -1,39 +1,10 @@
 import 'dart:async';
-
-import 'package:absensi/data/models/app_models.dart'; // Make sure this import is correct and points to your actual models
-import 'package:absensi/data/service/api_service.dart'; // Make sure this import is correct
+import 'package:absensi/constants/app_colors.dart';
+import 'package:absensi/data/models/app_models.dart';
+import 'package:absensi/data/service/api_service.dart';
+import 'package:absensi/screens/main_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-// --- Placeholder for your AppColors (Adjust based on your actual colors) ---
-// This should be in 'app_colors.dart'
-class AppColors {
-  static const Color primary = Color(0xFF4CAF50); // Green
-  static const Color accentOrange = Color(0xFFFFA726); // Orange
-  static const Color accentRed = Color(0xFFEF5350); // Red
-  static const Color accentGreen = Color(0xFF66BB6A); // Green
-  static const Color background = Color(0xFFF5F5F5); // Light grey
-  static const Color lightOrangeBackground = Color(
-    0xFFFFECB3,
-  ); // Lighter orange
-  static const Color textDark = Color(0xFF212121); // Dark grey text
-  static const Color cardShadow = Color(0x20000000); // Shadow color
-  static const Color error = Color(0xFFD32F2F); // Red for error
-}
-
-// --- Placeholder for your MainBottomNavigationBar (Adjust if needed) ---
-// This should be in 'main_bottom_navigation_bar.dart'
-class MainBottomNavigationBar extends StatelessWidget {
-  static ValueNotifier<bool> refreshHomeNotifier = ValueNotifier<bool>(false);
-
-  const MainBottomNavigationBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(); // Placeholder as it's not directly used in this file's UI
-  }
-}
-// -------------------------------------------------------------------------
 
 class AttendanceListScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -46,7 +17,8 @@ class AttendanceListScreen extends StatefulWidget {
 
 class _AttendanceListScreenState extends State<AttendanceListScreen> {
   final ApiService _apiService = ApiService();
-  late Future<List<Absence>> _attendanceFuture;
+  late Future<List<Absence>>
+  _attendanceFuture; // Changed to Future<List<Absence>>
 
   DateTime _selectedMonth = DateTime(
     DateTime.now().year,
@@ -78,10 +50,15 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   }
 
   Future<List<Absence>> _fetchAndFilterAttendances() async {
+    // Format the start and end dates for the API call
     final String startDate = DateFormat('yyyy-MM-01').format(_selectedMonth);
-    final String endDate = DateFormat(
-      'yyyy-MM-dd',
-    ).format(DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0));
+    final String endDate = DateFormat('yyyy-MM-dd').format(
+      DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + 1,
+        0,
+      ), // Last day of the month
+    );
 
     try {
       final ApiResponse<List<Absence>> response = await _apiService
@@ -89,34 +66,31 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
       if (response.statusCode == 200 && response.data != null) {
         final List<Absence> fetchedAbsences = response.data!;
-        // Sort by created_at date in descending order (latest first)
+        // Sort by attendanceDate in descending order (latest first)
         fetchedAbsences.sort((a, b) {
-          final DateTime? aCreatedAt =
-              a.createdAt != null
-                  ? DateTime.tryParse(a.createdAt!.toIso8601String())
-                  : null; // Ensure DateTime for sorting
-          final DateTime? bCreatedAt =
-              b.createdAt != null
-                  ? DateTime.tryParse(b.createdAt!.toIso8601String())
-                  : null; // Ensure DateTime for sorting
-
-          if (aCreatedAt == null && bCreatedAt == null) return 0;
-          if (aCreatedAt == null) return 1;
-          if (bCreatedAt == null) return -1;
-          return bCreatedAt.compareTo(aCreatedAt);
+          // Handle null attendanceDate dates: nulls come last
+          if (a.attendanceDate == null && b.attendanceDate == null) return 0;
+          if (a.attendanceDate == null)
+            return 1; // a is null, b is not, a comes after b
+          if (b.attendanceDate == null)
+            return -1; // b is null, a is not, b comes after a
+          return b.attendanceDate!.compareTo(
+            a.attendanceDate!,
+          ); // Both are non-null, compare
         });
         return fetchedAbsences;
       } else {
-        throw Exception(response.message ?? 'Failed to load attendance data');
+        throw Exception(response.message);
       }
     } catch (e) {
       print('Error fetching and filtering attendance list: $e');
+      // Show a SnackBar for the error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load attendance: $e')),
         );
       }
-      return [];
+      return []; // Return an empty list on error
     }
   }
 
@@ -167,14 +141,10 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       return '00:00:00';
     }
 
-    DateTime endDateTime = checkOut ?? DateTime.now();
+    DateTime endDateTime =
+        checkOut ?? DateTime.now(); // Use current time if no checkout
 
     final Duration duration = endDateTime.difference(checkIn);
-
-    if (duration.isNegative) {
-      return '00:00:00';
-    }
-
     final int hours = duration.inHours;
     final int minutes = duration.inMinutes.remainder(60);
     final int seconds = duration.inSeconds.remainder(60);
@@ -188,52 +158,39 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     Color cardBackgroundColor = AppColors.background;
     Color timeTextColor;
 
-    bool isRequestType = absence.status?.toLowerCase() == 'izin';
+    // Determine if it's a request type based on 'status' being 'izin'
+    bool isRequestType =
+        absence.status?.toLowerCase() == 'izin'; // Safely call toLowerCase
 
     if (isRequestType) {
       barColor = AppColors.accentOrange;
       statusPillColor = AppColors.accentOrange;
       cardBackgroundColor = AppColors.lightOrangeBackground;
-      timeTextColor = Colors.black;
+      timeTextColor = Colors.black; // Not directly used for request types
     } else {
+      // For regular check-in/out, determine status based on 'status' field
       if (absence.status?.toLowerCase() == 'late') {
+        // Safely call toLowerCase
         barColor = AppColors.accentRed;
         statusPillColor = AppColors.accentRed;
         timeTextColor = AppColors.accentRed;
       } else {
+        // Assuming 'masuk' or other non-late status is 'on time'
         barColor = AppColors.accentGreen;
         statusPillColor = AppColors.accentGreen;
         timeTextColor = AppColors.accentGreen;
       }
     }
 
-    bool showCheckIcon = absence.status?.toLowerCase() == 'masuk';
+    // Show check icon only for regular 'masuk' entries
+    bool showCheckIcon =
+        absence.status?.toLowerCase() == 'masuk'; // Safely call toLowerCase
 
-    DateTime? displayDate;
-    if (isRequestType) {
-      try {
-        if (absence.createdAt != null) {
-          displayDate = absence.createdAt; // Use the already parsed DateTime
-        }
-      } catch (e) {
-        print('Error handling createdAt for request: ${absence.createdAt}, $e');
-      }
-    } else {
-      try {
-        if (absence.attendanceDate != null) {
-          displayDate = DateTime.tryParse(
-            absence.attendanceDate!,
-          ); // Parse string from model
-        }
-      } catch (e) {
-        print('Error parsing attendanceDate: ${absence.attendanceDate}, $e');
-      }
-    }
-
-    final String formattedDate =
-        displayDate != null
-            ? DateFormat('E, MMM d, yyyy').format(displayDate)
-            : 'N/A';
+    // Always use attendanceDate for the display date
+    final DateTime? displayDate = absence.attendanceDate;
+    final String formattedDate = displayDate != null
+        ? DateFormat('E, MMM d, yyyy').format(displayDate) // Corrected format
+        : 'N/A'; // Fallback for date
 
     return Card(
       color: cardBackgroundColor,
@@ -277,10 +234,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                isRequestType
-                                    ? statusPillColor
-                                    : statusPillColor.withOpacity(0.1),
+                            color: isRequestType
+                                ? statusPillColor
+                                : statusPillColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(5),
                           ),
                           child: Row(
@@ -296,13 +252,13 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                                 ),
                               Text(
                                 isRequestType
-                                    ? 'IZIN'
-                                    : absence.status?.toUpperCase() ?? 'N/A',
+                                    ? 'IZIN' // Display "Izin" for request types
+                                    : absence.status?.toUpperCase() ??
+                                          'N/A', // Safely call toUpperCase
                                 style: TextStyle(
-                                  color:
-                                      isRequestType
-                                          ? Colors.white
-                                          : Colors.black54,
+                                  color: isRequestType
+                                      ? Colors.white
+                                      : Colors.black54,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -317,13 +273,21 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       Row(
                         children: [
                           _buildTimeColumn(
-                            absence.checkInTime ?? 'N/A',
+                            absence.checkIn?.toLocal().toString().substring(
+                                  11,
+                                  19,
+                                ) ??
+                                'N/A', // Provide fallback for checkIn
                             'Check In',
                             timeTextColor,
                           ),
                           const SizedBox(width: 20),
                           _buildTimeColumn(
-                            absence.checkOutTime ?? 'N/A',
+                            absence.checkOut?.toLocal().toString().substring(
+                                  11,
+                                  19,
+                                ) ??
+                                'N/A',
                             'Check Out',
                             timeTextColor,
                           ),
@@ -342,7 +306,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Text(
-                          'Reason: ${absence.alasanIzin?.split(':').last.trim() ?? 'N/A'}',
+                          'Reason: ${absence.alasanIzin?.isNotEmpty == true ? absence.alasanIzin : 'N/A'}', // Display the reason, handle empty string
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontSize: 14,
@@ -360,65 +324,45 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                 onPressed: () async {
                   final confirmed = await showDialog<bool>(
                     context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          backgroundColor: AppColors.background,
-                          title: const Text('Cancel Entry'),
-                          content: const Text(
-                            'Are you sure you want to cancel this entry?',
+                    builder: (context) => AlertDialog(
+                      backgroundColor: AppColors.background,
+                      title: const Text('Cancel Entry'),
+                      content: const Text(
+                        'Are you sure you want to cancel this entry?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text(
+                            'No',
+                            style: TextStyle(color: AppColors.primary),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: const Text(
-                                'No',
-                                style: TextStyle(color: AppColors.primary),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: const Text(
-                                'Yes',
-                                style: TextStyle(color: AppColors.error),
-                              ),
-                            ),
-                          ],
                         ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            'Yes',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
 
                   if (confirmed == true) {
                     try {
-                      // **START OF CORRECTION FOR 'int?' to 'int' ERROR**
-                      // 1. Check if ID is null. If it is, we cannot proceed.
-                      if (absence.id == null) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Error: Absence ID is missing. Cannot delete.',
-                              ),
-                            ),
-                          );
-                        }
-                        return; // Exit the function
-                      }
-
-                      // 2. Assuming ApiService.deleteAbsence expects an 'int' ID.
-                      //    We are providing a non-nullable int using '!' since we checked for null above.
-                      //    If the error 'int?' to 'int' still persists with '!' here,
-                      //    try: `await _apiService.deleteAbsence(absence.id as int);`
+                      // Call deleteAbsence from ApiService
                       final ApiResponse<Absence> deleteResponse =
-                          await _apiService.deleteAbsence(absence.id!);
-                      // **END OF CORRECTION**
+                          await _apiService.deleteAbsence(absence.id);
 
                       if (deleteResponse.statusCode == 200) {
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(deleteResponse.message)),
                         );
-                        await _refreshList();
+                        await _refreshList(); // Refresh the list after successful deletion
                         MainBottomNavigationBar.refreshHomeNotifier.value =
-                            true;
+                            true; // Signal HomeScreen to refresh
                       } else {
                         String errorMessage = deleteResponse.message;
                         if (deleteResponse.errors != null) {
@@ -488,7 +432,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
         actions: [
           IconButton(
             onPressed: () async {
-              // Your existing AddTemporary navigation (if any)
+              // final result = await Navigator.push(
+              //   context,
+              //   MaterialPageRoute(builder: (_) => const AddTemporary()),
+              // );
+              // if (result == true) {
+              //   _refreshList();
+              //   MainBottomNavigationBar.refreshHomeNotifier.value = true;
+              // }
             },
             icon: const Icon(Icons.add),
           ),
@@ -528,7 +479,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       children: [
                         Text(
                           DateFormat(
-                            'MMM yyyy',
+                            'MMM', // Corrected format string
                           ).format(_selectedMonth).toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -567,7 +518,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   if (attendances.isEmpty) {
                     return Center(
                       child: Text(
-                        'No attendance records found for ${DateFormat('MMMM yyyy').format(_selectedMonth)}.',
+                        'No attendance records found for ${DateFormat('MMMM').format(_selectedMonth)}.',
                       ),
                     );
                   }

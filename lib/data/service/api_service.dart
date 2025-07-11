@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:absensi/data/models/app_models.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
@@ -238,58 +237,29 @@ class ApiService {
   // Modified checkIn to handle both 'masuk' and 'izin' statuses
   // Location parameters are now nullable as they are not needed for 'izin'
   Future<ApiResponse<Absence>> checkIn({
-    double? checkInLat,
-    double? checkInLng,
-    String? checkInAddress,
+    double? checkInLat, // Made nullable
+    double? checkInLng, // Made nullable
+    String? checkInAddress, // Made nullable
+    String? checkInTime,
     required String status, // "masuk" or "izin"
     String? alasanIzin, // Required if status is "izin"
-    String? requestDate, // Required if status is "izin", format YYYY-MM-DD
+    required String attendanceDate,
   }) async {
-    final url = Uri.parse(
-      '$_baseUrl/absen/check-in',
-    ); // Pastikan ini endpoint yang benar untuk keduanya
+    final url = Uri.parse('$_baseUrl/absen/check-in');
     try {
-      final body = <String, dynamic>{'status': status};
+      final body = <String, dynamic>{
+        'status': status,
+        'attendance_date': attendanceDate,
+        'check_in': checkInTime,
+      };
 
       if (status == 'masuk') {
-        final now = DateTime.now();
-        final String attendanceDate = DateFormat('yyyy-MM-dd').format(now);
-        final String checkInValue = DateFormat(
-          'H:mm',
-        ).format(now); // H:mm atau HH:mm jika backend butuh leading zero
-
-        body['attendance_date'] = attendanceDate;
-        body['check_in'] =
-            checkInValue; // Sesuaikan dengan nama field di backend
         if (checkInLat != null) body['check_in_lat'] = checkInLat;
         if (checkInLng != null) body['check_in_lng'] = checkInLng;
         if (checkInAddress != null) body['check_in_address'] = checkInAddress;
-        // Tidak perlu mengirim check_in_time jika field backendnya 'check_in'
+        if (checkInTime != null) body['check_in'] = checkInTime;
       } else if (status == 'izin') {
-        // --- PERUBAHAN UTAMA DI SINI ---
-        // Sesuai JSON, hanya 'attendance_date', 'status', 'alasan_izin' yang dikirim
-        // check_in_time, check_in_lat, check_in_lng, check_in_address TIDAK DIKIRIM (atau dikirim null jika API eksplisit butuh)
-
-        final now =
-            DateTime.now(); // Gunakan waktu saat ini untuk attendance_date
-        final String attendanceDate = DateFormat('yyyy-MM-dd').format(now);
-
-        body['attendance_date'] =
-            attendanceDate; // Backend mengharapkan ini (sesuai JSON respons)
-        if (alasanIzin != null)
-          body['alasan_izin'] =
-              alasanIzin; // Pastikan ini nama field yang benar
-
-        // Jika Anda memiliki 'tanggal_izin' terpisah di backend untuk izin, tambahkan:
-        if (requestDate != null) body['tanggal_izin'] = requestDate;
-
-        // JANGAN MENGIRIM check_in, check_in_lat, check_in_lng, check_in_address UNTUK STATUS 'IZIN'
-        // Jika API backend Anda *masih* memunculkan error "required" setelah ini,
-        // itu berarti backend-nya memiliki validasi yang tidak konsisten, dan Anda mungkin perlu
-        // mengirimkan mereka sebagai null secara eksplisit jika API menerimanya,
-        // atau kosong ("") jika itu adalah string, tapi ini tidak ideal.
-        // Contoh: body['check_in_lat'] = null;
-        // Tapi berdasarkan JSON sukses, TIDAK DIKIRIM LEBIH BAIK.
+        if (alasanIzin != null) body['alasan_izin'] = alasanIzin;
       }
 
       final response = await http.post(
@@ -300,39 +270,21 @@ class ApiService {
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final String apiMessage =
-            responseBody['message'] as String? ??
-            'Absence submitted successfully';
-
-        if (responseBody['data'] is Map<String, dynamic>) {
-          return ApiResponse(
-            message: apiMessage,
-            data: Absence.fromJson(responseBody['data']),
-            statusCode: response.statusCode,
-          );
-        } else {
-          return ApiResponse.fromError(
-            '$apiMessage. Invalid data format from server for absence.',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        String errorMessage =
-            responseBody['message'] as String? ?? 'Absence submission failed';
-        if (responseBody['errors'] != null) {
-          errorMessage += '\nDetails: ${jsonEncode(responseBody['errors'])}';
-        }
-        return ApiResponse.fromError(
-          errorMessage,
+      if (response.statusCode == 200) {
+        return ApiResponse(
+          message: responseBody['message'],
+          data: Absence.fromJson(responseBody['data']),
           statusCode: response.statusCode,
-          errors: responseBody['errors'] as Map<String, dynamic>?,
+        );
+      } else {
+        return ApiResponse.fromError(
+          responseBody['message'] ?? 'Check-in failed',
+          statusCode: response.statusCode,
+          errors: responseBody['errors'],
         );
       }
     } catch (e) {
-      return ApiResponse.fromError(
-        'An error occurred during absence submission: $e',
-      );
+      return ApiResponse.fromError('An error occurred: $e');
     }
   }
 
@@ -340,60 +292,40 @@ class ApiService {
     required double checkOutLat,
     required double checkOutLng,
     required String checkOutAddress,
+    required String attendanceDate,
+    required String checkOutTime,
   }) async {
     final url = Uri.parse('$_baseUrl/absen/check-out');
     try {
-      // Ambil tanggal dan waktu saat ini untuk check-out
-      final now = DateTime.now();
-      final String attendanceDate = DateFormat('yyyy-MM-dd').format(now);
-      // Asumsi format 'H:i' seperti yang diminta sebelumnya untuk check_in.
-      // Jika backend Anda membutuhkan HH:mm atau HH:mm:ss untuk check_out, sesuaikan di sini.
-      final String checkOutValue = DateFormat('H:mm').format(now);
-
       final response = await http.post(
         url,
         headers: _getHeaders(includeAuth: true),
         body: jsonEncode({
-          'attendance_date': attendanceDate, // <--- TAMBAHKAN INI
-          'check_out': checkOutValue, // <--- TAMBAHKAN INI
           'check_out_lat': checkOutLat,
           'check_out_lng': checkOutLng,
           'check_out_address': checkOutAddress,
+          'attendance_date': attendanceDate,
+          'check_out': checkOutTime,
         }),
       );
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final String apiMessage =
-            responseBody['message'] as String? ?? 'Check-out successful';
-
-        if (responseBody['data'] is Map<String, dynamic>) {
-          return ApiResponse(
-            message: apiMessage,
-            data: Absence.fromJson(responseBody['data']),
-            statusCode: response.statusCode,
-          );
-        } else {
-          return ApiResponse.fromError(
-            '$apiMessage. Invalid data format from server for check-out.',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        String errorMessage =
-            responseBody['message'] as String? ?? 'Check-out failed';
-        if (responseBody['errors'] != null) {
-          errorMessage += '\nDetails: ${jsonEncode(responseBody['errors'])}';
-        }
-        return ApiResponse.fromError(
-          errorMessage,
+      if (response.statusCode == 200) {
+        return ApiResponse(
+          message: responseBody['message'],
+          data: Absence.fromJson(responseBody['data']),
           statusCode: response.statusCode,
-          errors: responseBody['errors'] as Map<String, dynamic>?,
+        );
+      } else {
+        return ApiResponse.fromError(
+          responseBody['message'] ?? 'Check-out failed',
+          statusCode: response.statusCode,
+          errors: responseBody['errors'],
         );
       }
     } catch (e) {
-      return ApiResponse.fromError('An error occurred during check-out: $e');
+      return ApiResponse.fromError('An error occurred: $e');
     }
   }
 
@@ -408,52 +340,20 @@ class ApiService {
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        final String apiMessage =
-            responseBody['message'] as String? ??
-            'Today\'s absence data fetched successfully';
-
-        // Pastikan 'data' ada dan merupakan Map sebelum diparsing
-        // Model AbsenceToday.fromJson sudah bisa menangani jika 'data' null
-        // atau jika data absensi langsung di root JSON.
-        // Namun, jika API selalu mengembalikan 'data' sebagai Map atau null,
-        // validasi di sini memastikan bahwa yang kita kirim ke fromJson adalah Map atau null.
-        if (responseBody['data'] is Map<String, dynamic> ||
-            responseBody['data'] == null) {
-          return ApiResponse(
-            message: apiMessage,
-            data:
-                responseBody['data'] != null
-                    ? AbsenceToday.fromJson(responseBody['data'])
-                    : null, // Jika 'data' null, kirim null ke AbsenceToday
-            statusCode: response.statusCode,
-          );
-        } else {
-          // Jika 'data' ada tapi bukan Map<String, dynamic>
-          return ApiResponse.fromError(
-            '$apiMessage. Invalid data format for today\'s absence.',
-            statusCode: response.statusCode,
-          );
-        }
-      } else {
-        // Jika status code bukan 200, berarti ada error
-        String errorMessage =
-            responseBody['message'] as String? ??
-            'Failed to get today\'s absence data';
-        if (responseBody['errors'] != null) {
-          // Tambahkan detail error dari backend jika ada
-          errorMessage += '\nDetails: ${jsonEncode(responseBody['errors'])}';
-        }
-        return ApiResponse.fromError(
-          errorMessage,
+        return ApiResponse(
+          message: responseBody['message'],
+          data: AbsenceToday.fromJson(responseBody['data']),
           statusCode: response.statusCode,
-          errors: responseBody['errors'] as Map<String, dynamic>?,
+        );
+      } else {
+        return ApiResponse.fromError(
+          responseBody['message'] ?? 'Failed to get today\'s absence data',
+          statusCode: response.statusCode,
+          errors: responseBody['errors'],
         );
       }
     } catch (e) {
-      // Tangani error jaringan atau parsing JSON
-      return ApiResponse.fromError(
-        'An error occurred while fetching today\'s absence data: $e',
-      );
+      return ApiResponse.fromError('An error occurred: $e');
     }
   }
 
@@ -776,6 +676,43 @@ class ApiService {
       } else {
         return ApiResponse.fromError(
           responseBody['message'] ?? 'Failed to get batches',
+          statusCode: response.statusCode,
+          errors: responseBody['errors'],
+        );
+      }
+    } catch (e) {
+      return ApiResponse.fromError('An error occurred: $e');
+    }
+  }
+
+  // Submit Izin Request
+  Future<ApiResponse<Absence>> submitIzinRequest({
+    required String date, // Date for the izin request
+    required String alasanIzin, // Reason for the izin request
+  }) async {
+    final url = Uri.parse(
+      '$_baseUrl/izin',
+    ); // Dedicated endpoint for Izin requests
+    final body = {'date': date, 'alasan_izin': alasanIzin};
+
+    try {
+      final response = await http.post(
+        url,
+        headers: _getHeaders(includeAuth: true),
+        body: jsonEncode(body),
+      );
+
+      final Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResponse(
+          message: responseBody['message'],
+          data: Absence.fromJson(responseBody['data']),
+          statusCode: response.statusCode,
+        );
+      } else {
+        return ApiResponse.fromError(
+          responseBody['message'] ?? 'Failed to submit Izin request',
           statusCode: response.statusCode,
           errors: responseBody['errors'],
         );

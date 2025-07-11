@@ -1,4 +1,3 @@
-
 import 'package:absensi/screens/attendance/attendance_list_screen.dart';
 import 'package:absensi/screens/auth/profile_screen.dart';
 import 'package:absensi/screens/home_screen.dart';
@@ -16,14 +15,16 @@ class MainBottomNavigationBar extends StatefulWidget {
   );
   static final ValueNotifier<bool> refreshAttendanceNotifier =
       ValueNotifier<bool>(false);
-  // ValueNotifier for PersonReportScreen
+  // ValueNotifier for PersonReportScreen (now Analytics)
   static final ValueNotifier<bool> refreshReportsNotifier = ValueNotifier<bool>(
     false,
   );
-  // NEW: ValueNotifier for ProfileScreen
-  static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(
-    false,
-  );
+  // NEW: ValueNotifier for the new 'Leave (up arrow)' screen.
+  static final ValueNotifier<bool> refreshLeaveUpArrowNotifier =
+      ValueNotifier<bool>(false);
+  // NEW: ValueNotifier for Settings Screen
+  static final ValueNotifier<bool> refreshSettingsNotifier =
+      ValueNotifier<bool>(false);
 
   @override
   State<MainBottomNavigationBar> createState() =>
@@ -39,23 +40,26 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      // HomeScreen is now the actual content for the first tab.
-      // We pass the refreshHomeNotifier to it so it can listen for external refresh signals.
-      HomeScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier,
-      ), // Access via widget name
-      // AttendanceListScreen: Now accepts refreshAttendanceNotifier to listen for updates.
-      AttendanceListScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
-      ), // Access via widget name
-      // Pass the new refreshReportsNotifier to PersonReportScreen
+      // HomeScreen
+      HomeScreen(refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier),
+      // PersonReportScreen (now Analytics)
       PersonReportScreen(
         refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
-      ), // Content for the third tab
-      // FIX: Pass the new refreshProfileNotifier to ProfileScreen
+      ),
+      // AttendanceListScreen (The custom "Leave" button in the middle)
+      AttendanceListScreen(
+        refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
+      ),
+      // A new screen for the "Leave (up arrow)" button. You'll need to create this.
+      // For now, I'll use ProfileScreen as a placeholder.
       ProfileScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshProfileNotifier,
-      ), // Content for the fourth tab
+        refreshNotifier: MainBottomNavigationBar.refreshLeaveUpArrowNotifier,
+      ),
+      // A new screen for Settings. You'll need to create this.
+      // For now, I'll use ProfileScreen as a placeholder.
+      ProfileScreen(
+        refreshNotifier: MainBottomNavigationBar.refreshSettingsNotifier,
+      ),
     ];
   }
 
@@ -70,29 +74,25 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     }
 
     // Special handling for when navigating TO the Home tab (index 0)
-    // This signal tells HomeScreen to refresh its data (e.g., if you came from Attendance tab).
     if (index == 0) {
-      MainBottomNavigationBar.refreshHomeNotifier.value =
-          true; // Set value via widget name
+      MainBottomNavigationBar.refreshHomeNotifier.value = true;
     }
-    // Special handling for when navigating TO the Attendance tab (index 1)
-    // This signal tells AttendanceListScreen to refresh its data.
+    // Special handling for when navigating TO the Analytics tab (index 1)
     else if (index == 1) {
-      MainBottomNavigationBar.refreshAttendanceNotifier.value =
-          true; // Set value via widget name
+      MainBottomNavigationBar.refreshReportsNotifier.value = true;
     }
-    // Special handling for when navigating TO the Reports tab (index 2)
+    // Special handling for when navigating TO the custom Leave/Attendance tab (index 2)
     else if (index == 2) {
-      MainBottomNavigationBar.refreshReportsNotifier.value =
-          true; // Set value via widget name
+      MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
     }
-    // NEW: Special handling for when navigating TO the Profile tab (index 3)
+    // Special handling for when navigating TO the Leave (up arrow) tab (index 3)
     else if (index == 3) {
-      MainBottomNavigationBar.refreshProfileNotifier.value =
-          true; // Set value via widget name
+      MainBottomNavigationBar.refreshLeaveUpArrowNotifier.value = true;
     }
-    // You can add more `else if` blocks for other tabs if they also need a refresh
-    // when they are explicitly tapped from the bottom navigation bar.
+    // Special handling for when navigating TO the Settings tab (index 4)
+    else if (index == 4) {
+      MainBottomNavigationBar.refreshSettingsNotifier.value = true;
+    }
   }
 
   @override

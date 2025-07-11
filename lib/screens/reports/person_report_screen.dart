@@ -451,7 +451,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                       Colors.red,
                     ),
                     _buildSummaryCard(
-                      'Total Late Entries',
+                      'Total Attendance',
                       _lateInCount.toString().padLeft(2, '0'),
                       Colors.orange,
                     ),
