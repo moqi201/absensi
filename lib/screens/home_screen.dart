@@ -1,14 +1,16 @@
-import 'dart:async';
+// lib/screens/home_screen.dart
 
+import 'dart:async';
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
 import 'package:absensi/screens/attendance/request_screen.dart';
 import 'package:absensi/screens/main_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart'; // For reverse geocoding
-import 'package:geolocator/geolocator.dart'; // For geolocation
+import 'package:geocoding/geocoding.dart'; // Untuk reverse geocoding
+import 'package:geolocator/geolocator.dart'; // Untuk geolocation
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart'; // Import untuk debugPrint
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -27,20 +29,25 @@ class _HomeScreenState extends State<HomeScreen> {
   String _currentTime = '';
   Timer? _timer;
 
-  AbsenceToday? _todayAbsence; // Changed from AttendanceModel to AbsenceToday
-  AbsenceStats? _absenceStats; // New state for attendance statistics
+  AbsenceToday? _todayAbsence;
+  AbsenceStats? _absenceStats;
 
   Position? _currentPosition;
   bool _permissionGranted = false;
-  bool _isCheckingInOrOut = false; // To prevent multiple taps during API calls
+  bool _isCheckingInOrOut =
+      false; // Untuk mencegah multiple taps saat panggilan API
+
+  // State untuk riwayat absensi
+  List<Absence> _attendanceHistory = [];
 
   @override
   void initState() {
     super.initState();
     _updateDateTime();
-    _determinePosition(); // Start location fetching
+    _determinePosition(); // Mulai pengambilan lokasi
     _loadUserData();
-    _fetchAttendanceData(); // Fetch initial attendance data
+    _fetchAttendanceData(); // Ambil data absensi awal
+    _fetchAttendanceHistory(); // Ambil data riwayat absensi
 
     widget.refreshNotifier.addListener(_handleRefreshSignal);
 
@@ -59,8 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleRefreshSignal() {
     if (widget.refreshNotifier.value) {
-      _fetchAttendanceData(); // Re-fetch data for the home screen
-      widget.refreshNotifier.value = false; // Reset the notifier after handling
+      _fetchAttendanceData();
+      _fetchAttendanceHistory(); // Refresh riwayat juga saat ada sinyal refresh
+      widget.refreshNotifier.value = false; // Reset notifier setelah ditangani
     }
   }
 
@@ -71,9 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _userName = response.data!.name;
       });
     } else {
-      print('Failed to load user profile: ${response.message}');
+      debugPrint('Failed to load user profile: ${response.message}');
       setState(() {
-        _userName = 'User'; // Default if profile fails
+        _userName = 'User'; // Default jika profil gagal dimuat
       });
     }
   }
@@ -90,12 +98,12 @@ class _HomeScreenState extends State<HomeScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
+    // Tes apakah layanan lokasi diaktifkan.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
+      // Layanan lokasi tidak diaktifkan, jangan lanjutkan
+      // mengakses posisi dan minta pengguna
+      // aplikasi untuk mengaktifkan layanan lokasi.
       if (mounted) {
         _showErrorDialog('Location services are disabled. Please enable them.');
       }
@@ -110,11 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
+        // Izin ditolak, lain kali Anda bisa mencoba
+        // meminta izin lagi (ini juga tempat
         // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
+        // mengembalikan true. Menurut pedoman Android
+        // aplikasi Anda harus menampilkan UI penjelasan sekarang.
         if (mounted) {
           _showErrorDialog(
             'Location permissions are denied. Please grant them in settings.',
@@ -129,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
+      // Izin ditolak selamanya, tangani dengan tepat.
       if (mounted) {
         _showErrorDialog(
           'Location permissions are permanently denied, we cannot request permissions.',
@@ -142,8 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
+    // Ketika kita mencapai di sini, izin diberikan dan kita bisa
+    // terus mengakses posisi perangkat.
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -154,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       await _getAddressFromLatLng(position);
     } catch (e) {
-      print('Error getting current location: $e');
+      debugPrint('Error getting current location: $e');
       if (mounted) {
         _showErrorDialog('Failed to get current location: $e');
       }
@@ -171,13 +179,13 @@ class _HomeScreenState extends State<HomeScreen> {
         position.latitude,
         position.longitude,
       );
+      // Menggunakan format yang lebih ringkas seperti di gambar: Sub-lokasi, Kota, Negara
       Placemark place = placemarks[0];
       setState(() {
-        _location =
-            "${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}";
+        _location = "${place.subLocality}, ${place.locality}, ${place.country}";
       });
     } catch (e) {
-      print('Error getting address from coordinates: $e');
+      debugPrint('Error getting address from coordinates: $e');
       setState(() {
         _location = 'Address not found';
       });
@@ -185,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchAttendanceData() async {
-    // Fetch today's absence record
+    // Ambil catatan absensi hari ini
     final ApiResponse<AbsenceToday> todayAbsenceResponse =
         await _apiService.getAbsenceToday();
     if (todayAbsenceResponse.statusCode == 200 &&
@@ -194,13 +202,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _todayAbsence = todayAbsenceResponse.data;
       });
     } else {
-      print('Failed to get today\'s absence: ${todayAbsenceResponse.message}');
+      debugPrint(
+        'Failed to get today\'s absence: ${todayAbsenceResponse.message}',
+      );
       setState(() {
-        _todayAbsence = null; // Reset if no record or error
+        _todayAbsence = null; // Reset jika tidak ada catatan atau error
       });
     }
 
-    // Fetch attendance statistics
+    // Ambil statistik absensi
     final ApiResponse<AbsenceStats> statsResponse =
         await _apiService.getAbsenceStats();
     if (statsResponse.statusCode == 200 && statsResponse.data != null) {
@@ -208,9 +218,27 @@ class _HomeScreenState extends State<HomeScreen> {
         _absenceStats = statsResponse.data;
       });
     } else {
-      print('Failed to get absence stats: ${statsResponse.message}');
+      debugPrint('Failed to get absence stats: ${statsResponse.message}');
       setState(() {
-        _absenceStats = null; // Reset if no stats or error
+        _absenceStats = null; // Reset jika tidak ada statistik atau error
+      });
+    }
+  }
+
+  // Method baru untuk mengambil riwayat absensi
+  Future<void> _fetchAttendanceHistory() async {
+    final ApiResponse<List<Absence>> historyResponse =
+        await _apiService.getAbsenceHistory();
+    if (historyResponse.statusCode == 200 && historyResponse.data != null) {
+      setState(() {
+        _attendanceHistory = historyResponse.data!;
+      });
+    } else {
+      debugPrint(
+        'Failed to get attendance history: ${historyResponse.message}',
+      );
+      setState(() {
+        _attendanceHistory = [];
       });
     }
   }
@@ -220,10 +248,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _showErrorDialog(
         'Location not available. Please ensure location services are enabled and permissions are granted.',
       );
-      await _determinePosition(); // Try to get location again
+      await _determinePosition(); // Coba dapatkan lokasi lagi
       return;
     }
-    if (_isCheckingInOrOut) return; // Prevent double tap
+    if (_isCheckingInOrOut) return; // Mencegah double tap
 
     setState(() {
       _isCheckingInOrOut = true;
@@ -233,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
-      // Format the current time to 'HH:mm' string for the API
+      // Format waktu saat ini ke string 'HH:mm' untuk API
       final String formattedCheckInTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -242,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
         checkInLat: _currentPosition!.latitude,
         checkInLng: _currentPosition!.longitude,
         checkInAddress: _location,
-        status: 'masuk', // Assuming 'masuk' for regular check-in
+        status: 'masuk', // Asumsi 'masuk' untuk check-in reguler
         attendanceDate: formattedAttendanceDate,
         checkInTime: formattedCheckInTime,
       );
@@ -252,9 +280,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        _fetchAttendanceData(); // Refresh home after check-in
+        _fetchAttendanceData(); // Refresh home setelah check-in
+        _fetchAttendanceHistory(); // Refresh history setelah check-in
         MainBottomNavigationBar.refreshAttendanceNotifier.value =
-            true; // Signal AttendanceListScreen
+            true; // Sinyal AttendanceListScreen
       } else {
         String errorMessage = response.message;
         if (response.errors != null) {
@@ -282,10 +311,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _showErrorDialog(
         'Location not available. Please ensure location services are enabled and permissions are granted.',
       );
-      await _determinePosition(); // Try to get location again
+      await _determinePosition(); // Coba dapatkan lokasi lagi
       return;
     }
-    if (_isCheckingInOrOut) return; // Prevent double tap
+    if (_isCheckingInOrOut) return; // Mencegah double tap
 
     setState(() {
       _isCheckingInOrOut = true;
@@ -295,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
-      // Format the current time to 'HH:mm' string for the API
+      // Format waktu saat ini ke string 'HH:mm' untuk API
       final String formattedCheckOutTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -313,9 +342,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        _fetchAttendanceData(); // Refresh home after check-out
+        _fetchAttendanceData(); // Refresh home setelah check-out
+        _fetchAttendanceHistory(); // Refresh history setelah check-out
         MainBottomNavigationBar.refreshAttendanceNotifier.value =
-            true; // Signal AttendanceListScreen
+            true; // Sinyal AttendanceListScreen
       } else {
         String errorMessage = response.message;
         if (response.errors != null) {
@@ -359,19 +389,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _calculateWorkingHours() {
-    if (_todayAbsence == null || _todayAbsence!.jamMasuk == null) {
-      return '00:00:00'; // No check-in yet or jamMasuk is null
+  // Mengubah _calculateWorkingHours untuk menerima AbsenceToday
+  String _calculateWorkingHours(AbsenceToday? absence) {
+    if (absence == null || absence.jamMasuk == null) {
+      return '00:00:00';
     }
 
-    final DateTime checkInDateTime =
-        _todayAbsence!.jamMasuk!; // Null-check added
+    final DateTime checkInDateTime = absence.jamMasuk!;
     DateTime endDateTime;
 
-    if (_todayAbsence!.jamKeluar != null) {
-      endDateTime = _todayAbsence!.jamKeluar!; // Null-check added
+    if (absence.jamKeluar != null) {
+      endDateTime = absence.jamKeluar!;
     } else {
-      endDateTime = DateTime.now(); // Use current time for live calculation
+      endDateTime = DateTime.now();
     }
 
     final Duration duration = endDateTime.difference(checkInDateTime);
@@ -389,93 +419,243 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        toolbarHeight: 80,
-        flexibleSpace: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(Icons.location_on, color: Colors.white, size: 24),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Location',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      Text(
-                        _location,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  onPressed: () {
-                    // Handle notification button press
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
       body: Stack(
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 120,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(30),
-                ),
-              ),
-            ),
-          ),
-          ListView(
-            padding: const EdgeInsets.only(top: 5),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  'Welcome, $_userName',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          // Menggunakan CustomScrollView dan SliverAppBar untuk header yang dinamis
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200, // Ketinggian saat expanded
+                floating: false,
+                pinned: true, // AppBar tetap terlihat saat di-scroll ke atas
+                automaticallyImplyLeading:
+                    false, // Hilangkan tombol back default
+                backgroundColor: AppColors.primary,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(30),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        20.0,
+                        50.0,
+                        20.0,
+                        0.0,
+                      ), // Sesuaikan padding
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Good Morning,',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Text(
+                                    _userName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_none,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 15),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _currentDate, // Tanggal saat ini
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      _location, // Lokasi saat ini
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              _buildMainActionCard(hasCheckedIn, hasCheckedOut),
-              const SizedBox(height: 20),
-              _buildAttendanceSummary(),
+              // Isi konten di bawah AppBar
+              SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const SizedBox(height: 10),
+                    // Kartu Check In dan Check Out (dua kolom)
+                    Row(
+                      children: [
+                        _buildCheckInOutCard(
+                          icon: Icons.check_circle_outline,
+                          label: 'Check In',
+                          time:
+                              _todayAbsence?.jamMasuk != null
+                                  ? DateFormat(
+                                    'HH:mm',
+                                  ).format(_todayAbsence!.jamMasuk!)
+                                  : '--:--',
+                          statusText: hasCheckedIn ? 'Early' : 'Not Checked In',
+                          statusColor:
+                              hasCheckedIn ? Colors.green : Colors.grey,
+                          onTap:
+                              hasCheckedIn
+                                  ? null
+                                  : _handleCheckIn, // Hanya bisa check in jika belum check in
+                          isEnabled: !hasCheckedIn && !_isCheckingInOrOut,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildCheckInOutCard(
+                          icon: Icons.logout_outlined,
+                          label: 'Check Out',
+                          time:
+                              _todayAbsence?.jamKeluar != null
+                                  ? DateFormat(
+                                    'HH:mm',
+                                  ).format(_todayAbsence!.jamKeluar!)
+                                  : '--:--',
+                          statusText:
+                              hasCheckedOut ? 'Done' : 'Not Checked Out',
+                          statusColor:
+                              hasCheckedOut ? Colors.grey : Colors.grey,
+                          onTap:
+                              hasCheckedIn && !hasCheckedOut
+                                  ? _handleCheckOut
+                                  : null, // Hanya bisa check out jika sudah check in dan belum check out
+                          isEnabled:
+                              hasCheckedIn &&
+                              !hasCheckedOut &&
+                              !_isCheckingInOrOut,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Kartu Statistik Kecil (Absence dan Total Attended)
+                    Row(
+                      children: [
+                        _buildSmallStatCard(
+                          title: 'Absence',
+                          value: _absenceStats?.totalIzin.toString() ?? '0',
+                          subtitle: DateFormat('MMMM').format(DateTime.now()),
+                          icon: Icons.person_remove_alt_1,
+                          iconColor: AppColors.primary,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildSmallStatCard(
+                          title: 'Total Attended',
+                          value: _absenceStats?.totalMasuk.toString() ?? '0',
+                          subtitle: DateFormat('MMMM').format(DateTime.now()),
+                          icon: Icons.check_circle_outline,
+                          iconColor: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Header Riwayat Absensi
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Attendance History',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Ini akan memicu refresh di AttendanceListScreen melalui Bottom Nav Bar
+                            MainBottomNavigationBar
+                                .refreshAttendanceNotifier
+                                .value = true;
+                          },
+                          child: const Text(
+                            'See More',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Daftar Riwayat Absensi
+                    if (_attendanceHistory.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Text('No attendance history available.'),
+                        ),
+                      )
+                    else
+                      // Tampilkan 5 item terbaru dari riwayat absensi
+                      ..._attendanceHistory.take(5).map((absence) {
+                        return _buildAttendanceHistoryItem(absence);
+                      }).toList(),
+                    const SizedBox(
+                      height: 80,
+                    ), // Untuk memberikan ruang bagi tombol "Request"
+                  ]),
+                ),
+              ),
             ],
           ),
+          // Tombol Request di bagian bawah
           Positioned(
             bottom: 10,
             left: 0,
@@ -489,9 +669,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => const RequestScreen()),
                   );
                   if (result == true) {
-                    _fetchAttendanceData(); // Refresh home after request
+                    _fetchAttendanceData();
+                    _fetchAttendanceHistory(); // Refresh history setelah request
                     MainBottomNavigationBar.refreshAttendanceNotifier.value =
-                        true; // Signal AttendanceListScreen
+                        true;
                   }
                 },
                 icon: const Icon(Icons.add_task, color: AppColors.primary),
@@ -516,338 +697,282 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMainActionCard(bool hasCheckedIn, bool hasCheckedOut) {
-    return Card(
-      color: AppColors.background,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 6,
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+  // Widget untuk kartu Check In/Check Out
+  Widget _buildCheckInOutCard({
+    required IconData icon,
+    required String label,
+    required String time,
+    required String statusText,
+    required Color statusColor,
+    VoidCallback? onTap,
+    required bool isEnabled,
+  }) {
+    return Expanded(
+      child: Card(
+        color: AppColors.background,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 4,
+        child: InkWell(
+          onTap: isEnabled ? onTap : null,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Handle Home button press - This might be for a specific location type
-                      // For now, it's a placeholder.
-                    },
-                    icon: const Icon(Icons.home, color: AppColors.primary),
-                    label: const Text(
-                      'Home',
-                      style: TextStyle(color: AppColors.primary),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Handle Office button press - This might be for a specific location type
-                      // For now, it's a placeholder.
-                    },
-                    icon: const Icon(Icons.business, color: Colors.grey),
-                    label: const Text(
-                      'Office',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.grey),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade100,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: const Text(
-                  'GENERAL SHIFT', // This seems static, keep as is
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _currentTime,
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
+                      child: Icon(icon, color: statusColor, size: 24),
                     ),
                     Text(
-                      _currentDate,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textLight,
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed:
-                      _isCheckingInOrOut
-                          ? null // Disable button if an operation is in progress
-                          : (hasCheckedIn
-                              ? (hasCheckedOut ? null : _handleCheckOut)
-                              : _handleCheckIn),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        hasCheckedIn
-                            ? (hasCheckedOut ? Colors.grey : Colors.redAccent)
-                            : AppColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 25,
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 3,
+                const SizedBox(height: 10),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
                   ),
-                  child:
-                      _isCheckingInOrOut
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                          : Text(
-                            hasCheckedIn
-                                ? (hasCheckedOut ? 'Checked Out' : 'Check Out')
-                                : 'Check In',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            const Divider(color: Colors.grey),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildTimeDetail(
-                  Icons.watch_later_outlined,
-                  // Safely access jamMasuk and format it, provide 'N/A' if null
-                  _todayAbsence?.jamMasuk?.toLocal().toString().substring(
-                        11,
-                        19,
-                      ) ??
-                      'N/A',
-                  'Check In',
-                  AppColors.primary,
-                ),
-                _buildTimeDetail(
-                  Icons.watch_later_outlined,
-                  // Safely access jamKeluar and format it, provide 'N/A' if null
-                  _todayAbsence?.jamKeluar?.toLocal().toString().substring(
-                        11,
-                        19,
-                      ) ??
-                      'N/A',
-                  'Check Out',
-                  Colors.redAccent,
-                ),
-                _buildTimeDetail(
-                  Icons.watch_later_outlined,
-                  _calculateWorkingHours(),
-                  'Working HR\'s',
-                  Colors.orange,
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTimeDetail(
-    IconData icon,
-    String time,
-    String label,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 5),
-        Text(
-          time,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textLight),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAttendanceSummary() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Attendance for this Month',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      DateFormat('MMM').format(DateTime.now()).toUpperCase(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: AppColors.textDark,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 15),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            children: [
-              _buildSummaryCard(
-                'Present',
-                _absenceStats?.totalMasuk ?? 0,
-                Colors.green,
-              ),
-              const SizedBox(width: 10),
-              _buildSummaryCard(
-                'Absent',
-                _absenceStats?.totalIzin ?? 0,
-                Colors.red,
-              ), // Assuming 'total_izin' maps to absents/leaves
-              const SizedBox(width: 10),
-              _buildSummaryCard(
-                'Attendance',
-                _absenceStats?.totalAbsen ?? 0,
-                Colors.orange,
-              ), // Assuming 'total_absen' maps to late/other
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCard(String title, int count, Color color) {
+  // Widget baru untuk kartu statistik kecil (Absence, Total Attended)
+  Widget _buildSmallStatCard({
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+  }) {
     return Expanded(
       child: Card(
         color: AppColors.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 2,
-        child: Column(
-          children: [
-            Container(
-              height: 5.0,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
+                  Icon(icon, color: iconColor, size: 24),
+                  const SizedBox(width: 8),
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      count.toString().padLeft(2, '0'),
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 32,
-                      ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: iconColor,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget untuk menampilkan item riwayat absensi
+  // Pastikan model Absence memiliki properti yang diperlukan seperti `tanggalAbsen` dan `checkInAddress`
+  Widget _buildAttendanceHistoryItem(Absence absence) {
+    String checkInTime =
+        absence.checkIn != null
+            ? DateFormat('HH:mm').format(
+              // Menggunakan checkIn dari model Absence yang sudah DateTime
+              absence.checkIn!,
+            )
+            : '--:--';
+    String checkOutTime =
+        absence.checkOut != null
+            ? DateFormat('HH:mm').format(
+              // Menggunakan checkOut dari model Absence yang sudah DateTime
+              absence.checkOut!,
+            )
+            : '--:--';
+
+    // Fungsi baru untuk menghitung jam kerja dari model Absence (untuk riwayat)
+    String totalHours = _calculateWorkingHoursForHistory(absence);
+
+    String day =
+        absence.attendanceDate != null
+            ? DateFormat('dd').format(
+              absence.attendanceDate!,
+            ) // attendanceDate sudah DateTime
+            : '--';
+    String dayOfWeek =
+        absence.attendanceDate != null
+            ? DateFormat('EEE').format(
+              absence.attendanceDate!,
+            ) // attendanceDate sudah DateTime
+            : '---';
+    String locationText = absence.checkInAddress ?? 'Unknown Location';
+
+    return Card(
+      color: AppColors.background,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    day,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
+                  ),
+                  Text(
+                    dayOfWeek,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Check In',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Text(
+                            checkInTime,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Check Out',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Text(
+                            checkOutTime,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total Hours',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          Text(
+                            totalHours,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          locationText,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -856,5 +981,24 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  // Fungsi baru untuk menghitung jam kerja dari model Absence (untuk riwayat)
+  String _calculateWorkingHoursForHistory(Absence absence) {
+    if (absence.checkIn == null || absence.checkOut == null) {
+      return '00:00:00'; // Jika belum check-out atau data tidak lengkap
+    }
+
+    try {
+      final Duration duration = absence.checkOut!.difference(absence.checkIn!);
+      final int hours = duration.inHours;
+      final int minutes = duration.inMinutes.remainder(60);
+      final int seconds = duration.inSeconds.remainder(60);
+
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } catch (e) {
+      debugPrint('Error calculating working hours for history: $e');
+      return 'N/A';
+    }
   }
 }
