@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
@@ -25,6 +26,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     DateTime.now().month,
     1,
   );
+
+  // Tambahkan state untuk tanggal yang dipilih di kalender (jika ada)
+  DateTime? _selectedDay;
 
   @override
   void initState() {
@@ -130,6 +134,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           newSelectedMonth.month != _selectedMonth.month) {
         setState(() {
           _selectedMonth = newSelectedMonth;
+          _selectedDay = null; // Reset selected day when month changes
         });
         _refreshList();
       }
@@ -153,256 +158,336 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   }
 
   Widget _buildAttendanceTile(Absence absence) {
-    Color barColor;
-    Color statusPillColor;
+    Color leftColumnBackgroundColor;
+    Color statusTextColor; // For "IZIN" or time text
     Color cardBackgroundColor = AppColors.background;
-    Color timeTextColor;
 
-    // Determine if it's a request type based on 'status' being 'izin'
-    bool isRequestType =
-        absence.status?.toLowerCase() == 'izin'; // Safely call toLowerCase
+    // Determine colors based on status
+    bool isRequestType = absence.status?.toLowerCase() == 'izin';
 
     if (isRequestType) {
-      barColor = AppColors.accentOrange;
-      statusPillColor = AppColors.accentOrange;
+      leftColumnBackgroundColor = AppColors.accentOrange;
+      statusTextColor = AppColors.accentOrange;
       cardBackgroundColor = AppColors.lightOrangeBackground;
-      timeTextColor = Colors.black; // Not directly used for request types
     } else {
-      // For regular check-in/out, determine status based on 'status' field
-      if (absence.status?.toLowerCase() == 'late') {
-        // Safely call toLowerCase
-        barColor = AppColors.accentRed;
-        statusPillColor = AppColors.accentRed;
-        timeTextColor = AppColors.accentRed;
-      } else {
-        // Assuming 'masuk' or other non-late status is 'on time'
-        barColor = AppColors.accentGreen;
-        statusPillColor = AppColors.accentGreen;
-        timeTextColor = AppColors.accentGreen;
-      }
+      leftColumnBackgroundColor = AppColors.accentGreen;
+      statusTextColor = AppColors.accentGreen;
+      cardBackgroundColor =
+          AppColors.background; // White background for regular cards
     }
 
-    // Show check icon only for regular 'masuk' entries
-    bool showCheckIcon =
-        absence.status?.toLowerCase() == 'masuk'; // Safely call toLowerCase
-
-    // Always use attendanceDate for the display date
     final DateTime? displayDate = absence.attendanceDate;
-    final String formattedDate = displayDate != null
-        ? DateFormat('E, MMM d, yyyy').format(displayDate) // Corrected format
-        : 'N/A'; // Fallback for date
+    final String dayNumber =
+        displayDate != null ? DateFormat('dd').format(displayDate) : '--';
+    final String dayOfWeek =
+        displayDate != null ? DateFormat('EEE').format(displayDate) : '---';
+    final String locationText = absence.checkInAddress ?? 'Unknown Location';
 
     return Card(
       color: cardBackgroundColor,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 5.0,
-              decoration: BoxDecoration(
-                color: barColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  bottomLeft: Radius.circular(10),
-                ),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.center, // Align content vertically in the middle
+        children: [
+          // Left side: Date (Day number and Day of Week)
+          Container(
+            width: 80, // Fixed width for the date column
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            decoration: BoxDecoration(
+              color: leftColumnBackgroundColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(10),
+                bottomLeft: Radius.circular(10),
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  dayNumber,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  dayOfWeek,
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          // Right side: Attendance details
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isRequestType)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          formattedDate,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isRequestType
-                                ? statusPillColor
-                                : statusPillColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Row(
-                            children: [
-                              if (showCheckIcon)
-                                const Padding(
-                                  padding: EdgeInsets.only(right: 4.0),
-                                  child: Icon(
-                                    Icons.check_circle_outline_rounded,
-                                    size: 16,
-                                    color: Colors.black54,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Check In',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                              Text(
-                                isRequestType
-                                    ? 'IZIN' // Display "Izin" for request types
-                                    : absence.status?.toUpperCase() ??
-                                          'N/A', // Safely call toUpperCase
-                                style: TextStyle(
-                                  color: isRequestType
-                                      ? Colors.white
-                                      : Colors.black54,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                                  Text(
+                                    absence.checkIn != null
+                                        ? DateFormat(
+                                          'HH:mm',
+                                        ).format(absence.checkIn!)
+                                        : '--:--',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: statusTextColor,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Check Out',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    absence.checkOut != null
+                                        ? DateFormat(
+                                          'HH:mm',
+                                        ).format(absence.checkOut!)
+                                        : '--:--',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: statusTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Total Hours',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    _calculateWorkingHours(
+                                      absence.checkIn,
+                                      absence.checkOut,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: statusTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Location
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                locationText,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (!isRequestType)
-                      Row(
-                        children: [
-                          _buildTimeColumn(
-                            absence.checkIn?.toLocal().toString().substring(
-                                  11,
-                                  19,
-                                ) ??
-                                'N/A', // Provide fallback for checkIn
-                            'Check In',
-                            timeTextColor,
-                          ),
-                          const SizedBox(width: 20),
-                          _buildTimeColumn(
-                            absence.checkOut?.toLocal().toString().substring(
-                                  11,
-                                  19,
-                                ) ??
-                                'N/A',
-                            'Check Out',
-                            timeTextColor,
-                          ),
-                          const SizedBox(width: 20),
-                          _buildTimeColumn(
-                            _calculateWorkingHours(
-                              absence.checkIn,
-                              absence.checkOut,
+                    )
+                  else // For 'izin' type
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 18,
+                              color: statusTextColor,
                             ),
-                            'Working HR\'s',
-                            timeTextColor,
-                          ),
-                        ],
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          'Reason: ${absence.alasanIzin?.isNotEmpty == true ? absence.alasanIzin : 'N/A'}', // Display the reason, handle empty string
+                            const SizedBox(width: 5),
+                            Text(
+                              'IZIN',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: statusTextColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          absence.alasanIzin?.isNotEmpty == true
+                              ? absence.alasanIzin!
+                              : 'Tidak ada alasan',
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontSize: 14,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.grey.withOpacity(0.7)),
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      backgroundColor: AppColors.background,
-                      title: const Text('Cancel Entry'),
-                      content: const Text(
-                        'Are you sure you want to cancel this entry?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: const Text(
-                            'No',
-                            style: TextStyle(color: AppColors.primary),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text(
-                            'Yes',
-                            style: TextStyle(color: AppColors.error),
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              displayDate != null
+                                  ? DateFormat(
+                                    'dd MMMM yyyy',
+                                  ).format(displayDate)
+                                  : 'N/A',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  );
-
-                  if (confirmed == true) {
-                    try {
-                      // Call deleteAbsence from ApiService
-                      final ApiResponse<Absence> deleteResponse =
-                          await _apiService.deleteAbsence(absence.id);
-
-                      if (deleteResponse.statusCode == 200) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(deleteResponse.message)),
-                        );
-                        await _refreshList(); // Refresh the list after successful deletion
-                        MainBottomNavigationBar.refreshHomeNotifier.value =
-                            true; // Signal HomeScreen to refresh
-                      } else {
-                        String errorMessage = deleteResponse.message;
-                        if (deleteResponse.errors != null) {
-                          deleteResponse.errors!.forEach((key, value) {
-                            errorMessage +=
-                                '\n$key: ${(value as List).join(', ')}';
-                          });
-                        }
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to cancel entry: $errorMessage',
-                              ),
+                ],
+              ),
+            ),
+          ),
+          // Delete button
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              icon: Icon(Icons.close, color: Colors.grey.withOpacity(0.7)),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        backgroundColor: AppColors.background,
+                        title: const Text('Cancel Entry'),
+                        content: const Text(
+                          'Are you sure you want to cancel this entry?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text(
+                              'No',
+                              style: TextStyle(color: AppColors.primary),
                             ),
-                          );
-                        }
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text(
+                              'Yes',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        ],
+                      ),
+                );
+
+                if (confirmed == true) {
+                  try {
+                    final ApiResponse<Absence> deleteResponse =
+                        await _apiService.deleteAbsence(absence.id);
+
+                    if (deleteResponse.statusCode == 200) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(deleteResponse.message)),
+                      );
+                      await _refreshList();
+                      MainBottomNavigationBar.refreshHomeNotifier.value = true;
+                    } else {
+                      String errorMessage = deleteResponse.message;
+                      if (deleteResponse.errors != null) {
+                        deleteResponse.errors!.forEach((key, value) {
+                          errorMessage +=
+                              '\n$key: ${(value as List).join(', ')}';
+                        });
                       }
-                    } catch (e) {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'An error occurred during cancellation: $e',
+                              'Failed to cancel entry: $errorMessage',
                             ),
                           ),
                         );
                       }
                     }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'An error occurred during cancellation: $e',
+                          ),
+                        ),
+                      );
+                    }
                   }
-                },
-              ),
+                }
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTimeColumn(String time, String label, Color color) {
+    // This helper is no longer used directly in _buildAttendanceTile as its content is inlined.
+    // Keeping it here for reference or if it's used elsewhere.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -425,21 +510,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Attendance Details'),
+        title: const Text('Attendance History'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () async {
-              // final result = await Navigator.push(
-              //   context,
-              //   MaterialPageRoute(builder: (_) => const AddTemporary()),
-              // );
-              // if (result == true) {
-              //   _refreshList();
-              //   MainBottomNavigationBar.refreshHomeNotifier.value = true;
-              // }
+            onPressed: () {
+              // Action for the add button, currently commented out
             },
             icon: const Icon(Icons.add),
           ),
@@ -479,7 +557,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       children: [
                         Text(
                           DateFormat(
-                            'MMM', // Corrected format string
+                            'MMM yyyy',
                           ).format(_selectedMonth).toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -499,6 +577,257 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               ],
             ),
           ),
+          // Kalender
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: () {
+                        setState(() {
+                          _selectedMonth = DateTime(
+                            _selectedMonth.year,
+                            _selectedMonth.month - 1,
+                            1,
+                          );
+                          _selectedDay = null;
+                        });
+                        _refreshList();
+                      },
+                    ),
+                    Text(
+                      DateFormat('MMMM yyyy').format(_selectedMonth),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () {
+                        setState(() {
+                          _selectedMonth = DateTime(
+                            _selectedMonth.year,
+                            _selectedMonth.month + 1,
+                            1,
+                          );
+                          _selectedDay = null;
+                        });
+                        _refreshList();
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Days of the week header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(7, (index) {
+                    final List<String> weekdays = [
+                      'Sun',
+                      'Mon',
+                      'Tue',
+                      'Wed',
+                      'Thu',
+                      'Fri',
+                      'Sat',
+                    ];
+                    return Expanded(
+                      child: Center(
+                        child: Text(
+                          weekdays[index],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                const Divider(),
+                // Calendar grid
+                FutureBuilder<List<Absence>>(
+                  future: _attendanceFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error loading calendar: ${snapshot.error}',
+                        ),
+                      );
+                    }
+
+                    final List<Absence> attendances = snapshot.data ?? [];
+                    final Map<int, Absence> attendanceMap = {
+                      for (var abs in attendances)
+                        abs.attendanceDate?.day ?? 0: abs,
+                    };
+
+                    final int daysInMonth =
+                        DateTime(
+                          _selectedMonth.year,
+                          _selectedMonth.month + 1,
+                          0,
+                        ).day;
+                    final int firstDayWeekday =
+                        _selectedMonth.weekday == 7
+                            ? 0
+                            : _selectedMonth.weekday; // Adjust Sunday to 0
+
+                    List<Widget> dayWidgets = [];
+
+                    // Add empty cells for days before the 1st of the month
+                    for (int i = 0; i < firstDayWeekday; i++) {
+                      dayWidgets.add(Expanded(child: Container()));
+                    }
+
+                    // Add day cells
+                    for (int day = 1; day <= daysInMonth; day++) {
+                      final DateTime currentDate = DateTime(
+                        _selectedMonth.year,
+                        _selectedMonth.month,
+                        day,
+                      );
+                      final bool isToday =
+                          currentDate.year == DateTime.now().year &&
+                          currentDate.month == DateTime.now().month &&
+                          currentDate.day == DateTime.now().day;
+                      final bool isSelected =
+                          _selectedDay != null &&
+                          _selectedDay!.year == currentDate.year &&
+                          _selectedDay!.month == currentDate.month &&
+                          _selectedDay!.day == currentDate.day;
+                      final Absence? dayAttendance = attendanceMap[day];
+
+                      Color dayColor = AppColors.textDark;
+                      Color dotColor = Colors.transparent;
+                      FontWeight fontWeight = FontWeight.normal;
+
+                      if (dayAttendance != null) {
+                        if (dayAttendance.status?.toLowerCase() == 'izin') {
+                          dotColor = AppColors.accentOrange;
+                          fontWeight = FontWeight.bold;
+                        } else if (dayAttendance.status?.toLowerCase() ==
+                            'late') {
+                          dotColor = AppColors.accentRed;
+                          fontWeight = FontWeight.bold;
+                        } else if (dayAttendance.status?.toLowerCase() ==
+                            'masuk') {
+                          dotColor = AppColors.accentGreen;
+                          fontWeight = FontWeight.bold;
+                        }
+                      }
+
+                      if (isToday) {
+                        dayColor = AppColors.primary;
+                        fontWeight = FontWeight.bold;
+                      }
+                      if (isSelected) {
+                        dayColor = Colors.white;
+                      }
+
+                      dayWidgets.add(
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedDay = currentDate;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color:
+                                    isSelected
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '$day',
+                                    style: TextStyle(
+                                      color: dayColor,
+                                      fontWeight: fontWeight,
+                                    ),
+                                  ),
+                                  if (dotColor != Colors.transparent)
+                                    Container(
+                                      width: 5,
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color: dotColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Arrange days into rows
+                    List<Row> calendarRows = [];
+                    for (int i = 0; i < dayWidgets.length; i += 7) {
+                      calendarRows.add(
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: dayWidgets.sublist(
+                            i,
+                            i + 7 > dayWidgets.length
+                                ? dayWidgets.length
+                                : i + 7,
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(children: calendarRows);
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Text(
+              _selectedDay != null
+                  ? 'Your Attendance on ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}'
+                  : 'Your Attendance',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshList,
@@ -514,20 +843,38 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   }
 
                   final attendances = snapshot.data ?? [];
+                  // Filter based on selected day if a day is selected
+                  final List<Absence> filteredAttendances =
+                      _selectedDay != null
+                          ? attendances
+                              .where(
+                                (absence) =>
+                                    absence.attendanceDate != null &&
+                                    absence.attendanceDate!.year ==
+                                        _selectedDay!.year &&
+                                    absence.attendanceDate!.month ==
+                                        _selectedDay!.month &&
+                                    absence.attendanceDate!.day ==
+                                        _selectedDay!.day,
+                              )
+                              .toList()
+                          : attendances;
 
-                  if (attendances.isEmpty) {
+                  if (filteredAttendances.isEmpty) {
                     return Center(
                       child: Text(
-                        'No attendance records found for ${DateFormat('MMMM').format(_selectedMonth)}.',
+                        _selectedDay != null
+                            ? 'No attendance records found for ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}.'
+                            : 'No attendance records found for ${DateFormat('MMMM yyyy').format(_selectedMonth)}.',
                       ),
                     );
                   }
 
                   return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: attendances.length,
+                    itemCount: filteredAttendances.length,
                     itemBuilder: (context, index) {
-                      return _buildAttendanceTile(attendances[index]);
+                      return _buildAttendanceTile(filteredAttendances[index]);
                     },
                   );
                 },

@@ -846,210 +846,210 @@ class _HomeScreenState extends State<HomeScreen> {
             : '---';
     String locationText = absence.checkInAddress ?? 'Unknown Location';
 
-    return Card(
-      color: AppColors.background,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: cardColor, // Menggunakan warna dinamis
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    day,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: textColor, // Menggunakan warna dinamis
+      return Card(
+        color: AppColors.background,
+        margin: const EdgeInsets.only(bottom: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: cardColor, // Menggunakan warna dinamis
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      day,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: textColor, // Menggunakan warna dinamis
+                      ),
                     ),
-                  ),
-                  Text(
-                    dayOfWeek,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: textColor, // Menggunakan warna dinamis
+                    Text(
+                      dayOfWeek,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: textColor, // Menggunakan warna dinamis
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Kondisional untuk menampilkan detail berdasarkan status
-                  if (absence.status == 'izin')
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              statusIcon,
-                              size: 18,
-                              color: textColor,
-                            ), // Ikon status
-                            const SizedBox(width: 5),
-                            Text(
-                              absence.status?.toUpperCase() ?? 'N/A',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Kondisional untuk menampilkan detail berdasarkan status
+                    if (absence.status == 'izin')
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                statusIcon,
+                                size: 18,
                                 color: textColor,
+                              ), // Ikon status
+                              const SizedBox(width: 5),
+                              Text(
+                                absence.status?.toUpperCase() ?? 'N/A',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          absence.alasanIzin ??
-                              'Tidak ada alasan', // Tampilkan alasan izin
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textDark,
+                            ],
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_today,
-                              size: 16,
-                              color: Colors.grey,
+                          const SizedBox(height: 8),
+                          Text(
+                            absence.alasanIzin ??
+                                'Tidak ada alasan', // Tampilkan alasan izin
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textDark,
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              DateFormat(
-                                'dd MMMM yyyy',
-                              ).format(absence.attendanceDate!),
-                              style: const TextStyle(
-                                fontSize: 12,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 16,
                                 color: Colors.grey,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    )
-                  else
-                    // Tampilan default untuk check-in/check-out
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Check In',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                Text(
-                                  absence.checkIn != null
-                                      ? DateFormat(
-                                        'HH:mm',
-                                      ).format(absence.checkIn!)
-                                      : '--:--',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Check Out',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                Text(
-                                  absence.checkOut != null
-                                      ? DateFormat(
-                                        'HH:mm',
-                                      ).format(absence.checkOut!)
-                                      : '--:--',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Total Hours',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                Text(
-                                  _calculateWorkingHoursForHistory(absence),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Text(
-                                locationText,
+                              const SizedBox(width: 5),
+                              Text(
+                                DateFormat(
+                                  'dd MMMM yyyy',
+                                ).format(absence.attendanceDate!),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                ],
+                            ],
+                          ),
+                        ],
+                      )
+                    else
+                      // Tampilan default untuk check-in/check-out
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Check In',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    absence.checkIn != null
+                                        ? DateFormat(
+                                          'HH:mm',
+                                        ).format(absence.checkIn!)
+                                        : '--:--',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Check Out',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    absence.checkOut != null
+                                        ? DateFormat(
+                                          'HH:mm',
+                                        ).format(absence.checkOut!)
+                                        : '--:--',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Total Hours',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    _calculateWorkingHoursForHistory(absence),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  locationText,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
   }
 
   // Fungsi baru untuk menghitung jam kerja dari model Absence (untuk riwayat)

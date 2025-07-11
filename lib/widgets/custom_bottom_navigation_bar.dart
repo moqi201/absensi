@@ -54,26 +54,26 @@ class CustomBottomNavigationBar extends StatelessWidget {
           label: 'Analytics',
         ),
         // Custom Leave/Attendance button (the one with the green circle)
-        BottomNavigationBarItem(
-          icon: Container(
-            padding: const EdgeInsets.all(10), // Adjust padding as needed
-            decoration: BoxDecoration(
-              color:
-                  currentIndex == 2
-                      ? AppColors.primary
-                      : Colors.grey.withOpacity(
-                        0.2,
-                      ), // Green when selected, light grey when unselected
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons
-                  .format_list_bulleted, // Ikon mirip daftar, atau ikon yang paling mendekati di gambar
-              color: Colors.white, // Icon always white for this custom button
-            ),
-          ),
-          label: 'Leave', // Label for this custom button
-        ),
+        // BottomNavigationBarItem(
+        //   icon: Container(
+        //     padding: const EdgeInsets.all(10), // Adjust padding as needed
+        //     decoration: BoxDecoration(
+        //       color:
+        //           currentIndex == 2
+        //               ? AppColors.primary
+        //               : Colors.grey.withOpacity(
+        //                 0.2,
+        //               ), // Green when selected, light grey when unselected
+        //       shape: BoxShape.circle,
+        //     ),
+        //     child: Icon(
+        //       Icons
+        //           .format_list_bulleted, // Ikon mirip daftar, atau ikon yang paling mendekati di gambar
+        //       color: Colors.white, // Icon always white for this custom button
+        //     ),
+        //   ),
+        //   label: 'Leave', // Label for this custom button
+        // ),
         // Leave (Up arrow icon) - previously Profile
         BottomNavigationBarItem(
           icon: Icon(

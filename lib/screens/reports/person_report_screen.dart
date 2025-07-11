@@ -36,8 +36,13 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       0; // Will be derived from presentCount for simplicity
   String _totalWorkingHours = '0hr';
 
-  // Data for Pie Chart
+  // Data for Pie Chart (will be repurposed for progress bars or removed if not needed)
   List<PieChartSectionData> _pieChartSections = [];
+
+  // New state variables for Progress section (mock data for now)
+  final double _taskProgress = 0.8; // 80%
+  final double _completedTaskProgress = 0.6; // 60%
+  final double _hoursProgress = 0.75; // 75%
 
   @override
   void initState() {
@@ -179,8 +184,10 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     });
   }
 
-  // New method to update pie chart data
+  // New method to update pie chart data (will be adapted or removed if no pie chart)
   void _updatePieChartData(int presentCount, int absentCount, int lateInCount) {
+    // This method might not be directly used if we are not displaying a pie chart.
+    // However, keeping it for now in case pie chart is re-introduced or data is needed.
     final total = presentCount + absentCount + lateInCount;
     if (total == 0) {
       setState(() {
@@ -241,7 +248,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     });
   }
 
-  // Helper for PieChart badges (labels)
+  // Helper for PieChart badges (labels) - will be removed if no pie chart
   Widget _buildBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -298,55 +305,86 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     }
   }
 
-  // Helper widget to build summary cards
-  Widget _buildSummaryCard(String title, dynamic value, Color color) {
+  // Helper widget to build summary cards (adapted for the new design)
+  Widget _buildOverviewCard({
+    required String title,
+    required String value,
+    required Color color,
+    required IconData icon,
+  }) {
     return Expanded(
       child: Card(
-        color: AppColors.background,
+        color: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 2,
-        child: Column(
-          children: [
-            Container(
-              height: 5.0,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      value.toString(),
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 28, // Slightly smaller for fit
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                title,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  // Helper widget for progress bars
+  Widget _buildProgressBar({
+    required String label,
+    required double progress,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              Text(
+                '${(progress * 100).toStringAsFixed(0)}%',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey[300],
+            color: color,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ],
       ),
     );
   }
@@ -356,10 +394,17 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Attendance Reports'),
+        title: const Text('Analytics'), // Changed title to Analytics
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          // Add back button
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
       ),
       body: FutureBuilder<void>(
         future: _reportDataFuture,
@@ -373,143 +418,236 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           }
 
           // Data is loaded, build the UI
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Monthly Summary',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+          return SingleChildScrollView(
+            // Use SingleChildScrollView for overall scrollability
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Overview',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _selectMonth(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              DateFormat(
-                                'MMM BCE', // Corrected format string
-                              ).format(_selectedMonth).toUpperCase(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: () => _selectMonth(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                DateFormat(
+                                  'MMMM yyyy',
+                                ).format(_selectedMonth).toUpperCase(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 16,
                                 color: AppColors.textDark,
                               ),
-                            ),
-                            const SizedBox(width: 5),
-                            const Icon(
-                              Icons.calendar_today,
-                              size: 16,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Overview Cards
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    children: [
+                      _buildOverviewCard(
+                        title: 'Attendance',
+                        value: '$_presentCount Day',
+                        color: AppColors.primary,
+                        icon: Icons.check_circle_outline,
+                      ),
+                      const SizedBox(width: 10),
+                      _buildOverviewCard(
+                        title: 'Time Off',
+                        value: '$_absentCount Day',
+                        color: AppColors.accentOrange,
+                        icon: Icons.event_busy_outlined,
+                      ),
+                      const SizedBox(width: 10),
+                      _buildOverviewCard(
+                        title: 'Late',
+                        value:
+                            '$_lateInCount Hour', // Assuming lateInCount is in hours or can be converted
+                        color: AppColors.accentRed,
+                        icon: Icons.access_time,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Progress Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Progress',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                               color: AppColors.textDark,
                             ),
-                          ],
-                        ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Handle View All for Progress
+                            },
+                            child: const Text(
+                              'View All',
+                              style: TextStyle(color: AppColors.primary),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // Summary cards for the selected month in a 3x2 grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.0,
-                  children: [
-                    _buildSummaryCard(
-                      'Total Working Days',
-                      _totalWorkingDaysInMonth.toString().padLeft(2, '0'),
-                      Colors.blueGrey,
-                    ),
-                    _buildSummaryCard(
-                      'Total Present Days',
-                      _presentCount.toString().padLeft(2, '0'),
-                      Colors.green,
-                    ),
-                    _buildSummaryCard(
-                      'Total Absent Days',
-                      _absentCount.toString().padLeft(2, '0'),
-                      Colors.red,
-                    ),
-                    _buildSummaryCard(
-                      'Total Attendance',
-                      _lateInCount.toString().padLeft(2, '0'),
-                      Colors.orange,
-                    ),
-                    _buildSummaryCard(
-                      'Total Working Hours',
-                      _totalWorkingHours,
-                      AppColors.primary,
-                    ),
-                    _buildSummaryCard(
-                      'Overall Attendance %',
-                      '${(_presentCount / (_totalWorkingDaysInMonth == 0 ? 1 : _totalWorkingDaysInMonth) * 100).toStringAsFixed(0)}%',
-                      Colors.teal,
-                    ),
-                  ],
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 8.0),
-                child: Text(
-                  'Attendance Status Breakdown',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                      const SizedBox(height: 10),
+                      _buildProgressBar(
+                        label: 'Task',
+                        progress: _taskProgress,
+                        color: AppColors.primary,
+                      ),
+                      _buildProgressBar(
+                        label: 'Completed Task',
+                        progress: _completedTaskProgress,
+                        color: AppColors.accentGreen,
+                      ),
+                      _buildProgressBar(
+                        label: 'Hours',
+                        progress: _hoursProgress,
+                        color: AppColors.accentRed,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Expanded(
-                child: AspectRatio(
-                  aspectRatio: 1.5,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: PieChart(
-                      PieChartData(
-                        sections: _pieChartSections,
-                        borderData: FlBorderData(show: false),
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 40,
-                        pieTouchData: PieTouchData(
-                          touchCallback: (
-                            FlTouchEvent event,
-                            pieTouchResponse,
-                          ) {
-                            setState(() {
-                              if (!event.isInterestedForInteractions ||
-                                  pieTouchResponse == null ||
-                                  pieTouchResponse.touchedSection == null) {
-                                return;
-                              }
-                            });
-                          },
+                const SizedBox(height: 20),
+                // Total Working Hour (Bottom Section)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Total Working Hour',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                      Card(
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  Text(
+                                    DateFormat('EEE').format(
+                                      DateTime.now(),
+                                    ), // Current day of week
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    DateFormat('dd').format(
+                                      DateTime.now(),
+                                    ), // Current day number
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Productive Time',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    _totalWorkingHours, // Re-using total working hours for "Productive Time"
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Time at work',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    _totalWorkingHours, // Re-using total working hours for "Time at work"
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20), // Add some bottom padding
+              ],
+            ),
           );
         },
       ),

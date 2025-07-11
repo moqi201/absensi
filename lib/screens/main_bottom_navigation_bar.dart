@@ -1,4 +1,5 @@
-import 'package:absensi/screens/attendance/attendance_list_screen.dart';
+import 'package:absensi/constants/app_colors.dart';
+import 'package:absensi/screens/attendance/request_screen.dart'; // Import RequestScreen
 import 'package:absensi/screens/auth/profile_screen.dart';
 import 'package:absensi/screens/home_screen.dart';
 import 'package:absensi/screens/reports/person_report_screen.dart';
@@ -19,9 +20,6 @@ class MainBottomNavigationBar extends StatefulWidget {
   static final ValueNotifier<bool> refreshReportsNotifier = ValueNotifier<bool>(
     false,
   );
-  // NEW: ValueNotifier for the new 'Leave (up arrow)' screen.
-  static final ValueNotifier<bool> refreshLeaveUpArrowNotifier =
-      ValueNotifier<bool>(false);
   // NEW: ValueNotifier for Settings Screen
   static final ValueNotifier<bool> refreshSettingsNotifier =
       ValueNotifier<bool>(false);
@@ -40,23 +38,15 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      // HomeScreen
+      // HomeScreen (Index 0)
       HomeScreen(refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier),
-      // PersonReportScreen (now Analytics)
+      // PersonReportScreen (now Analytics) (Index 1)
       PersonReportScreen(
         refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
       ),
-      // AttendanceListScreen (The custom "Leave" button in the middle)
-      AttendanceListScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
-      ),
-      // A new screen for the "Leave (up arrow)" button. You'll need to create this.
-      // For now, I'll use ProfileScreen as a placeholder.
-      ProfileScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshLeaveUpArrowNotifier,
-      ),
-      // A new screen for Settings. You'll need to create this.
-      // For now, I'll use ProfileScreen as a placeholder.
+      // RequestScreen (Tombol tengah Floating Action Button) (Index 2)
+      const RequestScreen(), // Mengganti AttendanceListScreen dengan RequestScreen
+      // ProfileScreen for Settings (Index 3)
       ProfileScreen(
         refreshNotifier: MainBottomNavigationBar.refreshSettingsNotifier,
       ),
@@ -81,16 +71,15 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     else if (index == 1) {
       MainBottomNavigationBar.refreshReportsNotifier.value = true;
     }
-    // Special handling for when navigating TO the custom Leave/Attendance tab (index 2)
+    // Special handling for when navigating TO the RequestScreen tab (index 2)
+    // RequestScreen mungkin tidak memerlukan refreshNotifier jika datanya mandiri
+    // atau di-refresh saat masuk. Jika memang perlu, Anda bisa menambahkan notifier khusus.
+    // Untuk saat ini, kita asumsikan tidak memerlukan sinyal refresh dari sini.
     else if (index == 2) {
-      MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
+      // MainBottomNavigationBar.refreshAttendanceNotifier.value = true; // Tidak diperlukan untuk RequestScreen secara tipikal
     }
-    // Special handling for when navigating TO the Leave (up arrow) tab (index 3)
+    // Special handling for when navigating TO the Settings tab (now index 3)
     else if (index == 3) {
-      MainBottomNavigationBar.refreshLeaveUpArrowNotifier.value = true;
-    }
-    // Special handling for when navigating TO the Settings tab (index 4)
-    else if (index == 4) {
       MainBottomNavigationBar.refreshSettingsNotifier.value = true;
     }
   }
@@ -99,6 +88,16 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
+      floatingActionButton: FloatingActionButton(
+        onPressed:
+            () => _onItemTapped(
+              2,
+            ), // Index untuk tombol tengah (sekarang RequestScreen)
+        backgroundColor: AppColors.primary,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.format_list_bulleted, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex:
             _selectedIndex, // Pass the current selected index for highlighting
