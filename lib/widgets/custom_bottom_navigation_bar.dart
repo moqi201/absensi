@@ -27,70 +27,68 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTap,
-      // selectedItemColor: AppColors.primary, // Color for selected icon/label - will handle custom
-      unselectedItemColor: Colors.grey, // Color for unselected icons/labels
-      backgroundColor: Colors.white, // Background color of the navigation bar
-      type:
-          BottomNavigationBarType
-              .fixed, // Ensures all labels are always visible
-      items: <BottomNavigationBarItem>[
-        // Home
-        BottomNavigationBarItem(
-          icon: Icon(
-            Icons.home,
-            color: currentIndex == 0 ? AppColors.primary : Colors.grey,
-          ),
-          label: 'Home',
+    return ClipRRect( // Menggunakan ClipRRect untuk memberikan sudut bulat pada seluruh BottomAppBar
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(25), // Sudut atas yang bulat
+        bottom: Radius.circular(25), // Sudut bawah yang bulat
+      ),
+      child: BottomAppBar(
+        color: Colors.white,
+        shape: const CircularNotchedRectangle(), // Hanya lekukan untuk FAB
+        notchMargin: 6.0, // Jarak antara FAB dan BottomAppBar
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            // Home (Index 0)
+            _buildNavItem(0, Icons.home, 'Home'),
+            // Profile (Index 1) - Menggunakan Icons.person sebagai contoh
+            _buildNavItem(1, Icons.person, 'Profile'),
+            // Placeholder for the FAB (center item) - tidak ada item di sini, hanya SizedBox
+            const SizedBox(width: 48), // Memberikan ruang untuk FAB
+            // Heart (Index 2) - Menggunakan Icons.favorite_border sebagai contoh
+            _buildNavItem(2, Icons.favorite_border, 'Likes'), // Indeks visual 2
+            // Notifications (Index 3) - Menggunakan Icons.notifications sebagai contoh
+            _buildNavItem(3, Icons.notifications, 'Notifs'), // Indeks visual 3
+          ],
         ),
-        // Analytics (previously Reports)
-        BottomNavigationBarItem(
-          icon: Icon(
-            Icons.bar_chart,
-            color: currentIndex == 1 ? AppColors.primary : Colors.grey,
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    // `index` di sini adalah indeks visual item di BottomAppBar (0, 1, 2, 3).
+    // `currentIndex` adalah `_selectedIndex` dari MainBottomNavigationBar.
+    // Item disorot jika indeks visualnya cocok dengan `_selectedIndex`.
+    bool isSelected = (currentIndex == index);
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(index), // Meneruskan indeks visual (0,1,2,3)
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  color: isSelected ? Colors.pink : Colors.grey, // Warna ikon disesuaikan
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.pink : Colors.grey, // Warna teks disesuaikan
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis, // Memastikan teks dipotong dengan elipsis jika terlalu panjang
+                  maxLines: 1, // Membatasi teks hanya pada satu baris
+                ),
+              ],
+            ),
           ),
-          label: 'Analytics',
         ),
-        // Custom Leave/Attendance button (the one with the green circle)
-        // BottomNavigationBarItem(
-        //   icon: Container(
-        //     padding: const EdgeInsets.all(10), // Adjust padding as needed
-        //     decoration: BoxDecoration(
-        //       color:
-        //           currentIndex == 2
-        //               ? AppColors.primary
-        //               : Colors.grey.withOpacity(
-        //                 0.2,
-        //               ), // Green when selected, light grey when unselected
-        //       shape: BoxShape.circle,
-        //     ),
-        //     child: Icon(
-        //       Icons
-        //           .format_list_bulleted, // Ikon mirip daftar, atau ikon yang paling mendekati di gambar
-        //       color: Colors.white, // Icon always white for this custom button
-        //     ),
-        //   ),
-        //   label: 'Leave', // Label for this custom button
-        // ),
-        // Leave (Up arrow icon) - previously Profile
-        BottomNavigationBarItem(
-          icon: Icon(
-            Icons.arrow_upward,
-            color: currentIndex == 3 ? AppColors.primary : Colors.grey,
-          ),
-          label: 'Leave', // Label for the second leave button
-        ),
-        // Settings (previously empty slot)
-        BottomNavigationBarItem(
-          icon: Icon(
-            Icons.settings,
-            color: currentIndex == 4 ? AppColors.primary : Colors.grey,
-          ),
-          label: 'Settings',
-        ),
-      ],
+      ),
     );
   }
 }

@@ -656,42 +656,42 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           // Tombol Request di bagian bawah
-          Positioned(
-            bottom: 10,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RequestScreen()),
-                  );
-                  if (result == true) {
-                    _fetchAttendanceData();
-                    _fetchAttendanceHistory(); // Refresh history setelah request
-                    MainBottomNavigationBar.refreshAttendanceNotifier.value =
-                        true;
-                  }
-                },
-                icon: const Icon(Icons.add_task, color: AppColors.primary),
-                label: const Text(
-                  'Request',
-                  style: TextStyle(color: AppColors.primary, fontSize: 18),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.background,
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  side: const BorderSide(color: AppColors.primary, width: 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Positioned(
+          //   bottom: 10,
+          //   left: 0,
+          //   right: 0,
+          //   child: Padding(
+          //     padding: const EdgeInsets.all(16.0),
+          //     child: ElevatedButton.icon(
+          //       onPressed: () async {
+          //         final result = await Navigator.push(
+          //           context,
+          //           MaterialPageRoute(builder: (_) => const RequestScreen()),
+          //         );
+          //         if (result == true) {
+          //           _fetchAttendanceData();
+          //           _fetchAttendanceHistory(); // Refresh history setelah request
+          //           MainBottomNavigationBar.refreshAttendanceNotifier.value =
+          //               true;
+          //         }
+          //       },
+          //       icon: const Icon(Icons.add_task, color: AppColors.primary),
+          //       label: const Text(
+          //         'Request',
+          //         style: TextStyle(color: AppColors.primary, fontSize: 18),
+          //       ),
+          //       style: ElevBatedButton.styleFrom(
+          //         backgroundColor: AppColors.background,
+          //         foregroundColor: AppColors.primary,
+          //         padding: const EdgeInsets.symmetric(vertical: 15),
+          //         side: const BorderSide(color: AppColors.primary, width: 2),
+          //         shape: RoundedRectangleBorder(
+          //           borderRadius: BorderRadius.circular(30),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

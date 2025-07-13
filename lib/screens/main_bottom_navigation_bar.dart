@@ -1,8 +1,9 @@
 import 'package:absensi/constants/app_colors.dart';
-import 'package:absensi/screens/attendance/request_screen.dart'; // Import RequestScreen
-import 'package:absensi/screens/auth/profile_screen.dart';
+import 'package:absensi/screens/attendance/attendance_list_screen.dart'; // Digunakan untuk item "Documents"
+import 'package:absensi/screens/attendance/request_screen.dart'; // Digunakan untuk FAB tengah
+import 'package:absensi/screens/auth/profile_screen.dart'; // Digunakan untuk item "Notifications"
 import 'package:absensi/screens/home_screen.dart';
-import 'package:absensi/screens/reports/person_report_screen.dart';
+import 'package:absensi/screens/reports/person_report_screen.dart'; // Digunakan untuk item "Tools/Utilities"
 import 'package:absensi/widgets/custom_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -15,14 +16,12 @@ class MainBottomNavigationBar extends StatefulWidget {
     false,
   );
   static final ValueNotifier<bool> refreshAttendanceNotifier =
-      ValueNotifier<bool>(false);
-  // ValueNotifier for PersonReportScreen (now Analytics)
+      ValueNotifier<bool>(false); // Akan digunakan untuk item "Documents"
   static final ValueNotifier<bool> refreshReportsNotifier = ValueNotifier<bool>(
     false,
-  );
-  // NEW: ValueNotifier for Settings Screen
+  ); // Akan digunakan untuk item "Tools/Utilities"
   static final ValueNotifier<bool> refreshSettingsNotifier =
-      ValueNotifier<bool>(false);
+      ValueNotifier<bool>(false); // Akan digunakan untuk item "Notifications"
 
   @override
   State<MainBottomNavigationBar> createState() =>
@@ -30,7 +29,15 @@ class MainBottomNavigationBar extends StatefulWidget {
 }
 
 class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
-  int _selectedIndex = 0; // Start with Home tab (index 0)
+  // _selectedIndex akan merepresentasikan indeks layar yang ditampilkan di IndexedStack.
+  // 0: Home
+  // 1: Tools/Utilities (PersonReportScreen)
+  // 2: Documents (AttendanceListScreen)
+  // 3: Notifications (ProfileScreen)
+  int _selectedIndex = 0; // Mulai dengan tab Home (indeks 0)
+
+  // State untuk mengontrol tampilan FAB (tambah atau silang)
+  bool _isRequestScreenOpen = false;
 
   late final List<Widget> _widgetOptions;
 
@@ -38,48 +45,43 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      // HomeScreen (Index 0)
+      // Index 0: Home
       HomeScreen(refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier),
-      // PersonReportScreen (now Analytics) (Index 1)
+      // Index 1: Tools/Utilities (placeholder PersonReportScreen)
       PersonReportScreen(
         refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
       ),
-      // RequestScreen (Tombol tengah Floating Action Button) (Index 2)
-      const RequestScreen(), // Mengganti AttendanceListScreen dengan RequestScreen
-      // ProfileScreen for Settings (Index 3)
+      // Index 2: Documents (placeholder AttendanceListScreen)
+      AttendanceListScreen(
+        refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
+      ),
+      // Index 3: Notifications (placeholder ProfileScreen)
       ProfileScreen(
         refreshNotifier: MainBottomNavigationBar.refreshSettingsNotifier,
       ),
     ];
   }
 
-  /// Handles the tap event on a BottomNavigationBarItem.
+  /// Menangani event tap pada BottomNavigationBarItem.
   ///
-  /// Updates the [_selectedIndex] to switch the displayed screen in the IndexedStack.
+  /// Memperbarui [_selectedIndex] untuk mengganti layar yang ditampilkan di IndexedStack.
   void _onItemTapped(int index) {
+    // `index` yang diterima di sini adalah indeks visual dari CustomBottomNavigationBar (0, 1, 2, 3).
+    // Ini langsung cocok dengan indeks di `_widgetOptions`.
     if (_selectedIndex != index) {
       setState(() {
         _selectedIndex = index;
       });
     }
 
-    // Special handling for when navigating TO the Home tab (index 0)
+    // Penanganan khusus untuk menyegarkan layar
     if (index == 0) {
       MainBottomNavigationBar.refreshHomeNotifier.value = true;
-    }
-    // Special handling for when navigating TO the Analytics tab (index 1)
-    else if (index == 1) {
+    } else if (index == 1) { // Tools
       MainBottomNavigationBar.refreshReportsNotifier.value = true;
-    }
-    // Special handling for when navigating TO the RequestScreen tab (index 2)
-    // RequestScreen mungkin tidak memerlukan refreshNotifier jika datanya mandiri
-    // atau di-refresh saat masuk. Jika memang perlu, Anda bisa menambahkan notifier khusus.
-    // Untuk saat ini, kita asumsikan tidak memerlukan sinyal refresh dari sini.
-    else if (index == 2) {
-      // MainBottomNavigationBar.refreshAttendanceNotifier.value = true; // Tidak diperlukan untuk RequestScreen secara tipikal
-    }
-    // Special handling for when navigating TO the Settings tab (now index 3)
-    else if (index == 3) {
+    } else if (index == 2) { // Documents
+      MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
+    } else if (index == 3) { // Notifications
       MainBottomNavigationBar.refreshSettingsNotifier.value = true;
     }
   }
@@ -89,19 +91,37 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
       floatingActionButton: FloatingActionButton(
-        onPressed:
-            () => _onItemTapped(
-              2,
-            ), // Index untuk tombol tengah (sekarang RequestScreen)
-        backgroundColor: AppColors.primary,
+        onPressed: () async {
+          if (_isRequestScreenOpen) {
+            // Jika RequestScreen terbuka, tutup
+            Navigator.of(context).pop();
+          } else {
+            // Jika RequestScreen tidak terbuka, buka
+            setState(() {
+              _isRequestScreenOpen = true; // Set state FAB ke 'X'
+            });
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RequestScreen()),
+            ).then((_) {
+              // Ketika RequestScreen ditutup, kembalikan state FAB ke '+'
+              setState(() {
+                _isRequestScreenOpen = false;
+              });
+            });
+          }
+        },
+        backgroundColor: Colors.pink, // Warna FAB sesuai gambar
         shape: const CircleBorder(),
-        child: const Icon(Icons.format_list_bulleted, color: Colors.white),
+        child: Icon(
+          _isRequestScreenOpen ? Icons.close : Icons.add, // Ikon FAB berubah
+          color: Colors.white,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex:
-            _selectedIndex, // Pass the current selected index for highlighting
-        onTap: _onItemTapped, // Pass the callback to handle tab taps
+        currentIndex: _selectedIndex, // Meneruskan indeks layar yang sedang aktif
+        onTap: _onItemTapped, // Meneruskan callback untuk menangani tap tab
       ),
     );
   }
