@@ -1,3 +1,4 @@
+// lib/screens/home/home_screen.dart (path mungkin perlu disesuaikan)
 import 'dart:async';
 
 import 'package:absensi/constants/app_colors.dart';
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
 
   String _userName = 'User';
+  String _profilePhotoUrl = ''; // New state for profile photo URL
   String _location = 'Getting Location...';
   String _currentDate = '';
   String _currentTime = '';
@@ -65,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (widget.refreshNotifier.value) {
       _fetchAttendanceData();
       _fetchAttendanceHistory(); // Refresh riwayat juga saat ada sinyal refresh
+      _loadUserData(); // Also refresh user data for profile image/name
       widget.refreshNotifier.value = false; // Reset notifier setelah ditangani
     }
   }
@@ -74,11 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (response.statusCode == 200 && response.data != null) {
       setState(() {
         _userName = response.data!.name;
+        _profilePhotoUrl =
+            response.data!.profile_photo ?? ''; // Get profile photo URL
       });
     } else {
       debugPrint('Failed to load user profile: ${response.message}');
       setState(() {
         _userName = 'User'; // Default jika profil gagal dimuat
+        _profilePhotoUrl = ''; // Clear photo URL on error
       });
     }
   }
@@ -91,6 +97,20 @@ class _HomeScreenState extends State<HomeScreen> {
       // Format waktu sesuai gambar: "09:00 AM"
       _currentTime = DateFormat('hh:mm a').format(now);
     });
+  }
+
+  // New method to get dynamic greeting based on time
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon';
+    } else if (hour >= 17 && hour < 20) {
+      return 'Good Evening';
+    } else {
+      return 'Good Night';
+    }
   }
 
   Future<void> _determinePosition() async {
@@ -483,9 +503,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Hey,', // Diubah dari 'Good Morning,'
-                                    style: TextStyle(
+                                  Text(
+                                    '${_getGreeting()},', // Updated: Dynamic greeting
+                                    style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 16,
                                     ),
@@ -500,25 +520,37 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ],
                               ),
-                              // Placeholder untuk gambar profil
+                              // Updated: Display actual profile image
                               Container(
                                 width: 50,
                                 height: 50,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.white.withOpacity(0.3),
-                                  image: const DecorationImage(
-                                    image: NetworkImage(
-                                      'https://placehold.co/50x50/ffffff/000000?text=P', // Gambar placeholder
-                                    ),
-                                    fit: BoxFit.cover,
-                                  ),
+                                  image:
+                                      _profilePhotoUrl.isNotEmpty
+                                          ? DecorationImage(
+                                            image: NetworkImage(
+                                              _profilePhotoUrl.startsWith(
+                                                    'http',
+                                                  )
+                                                  ? _profilePhotoUrl
+                                                  : 'https://appabsensi.mobileprojp.com/public/$_profilePhotoUrl',
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                          : const DecorationImage(
+                                            image: NetworkImage(
+                                              'https://placehold.co/50x50/ffffff/000000?text=P', // Placeholder if no image
+                                            ),
+                                            fit: BoxFit.cover,
+                                          ),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 15),
-                          // Waktu saat ini (besar)
+                          // Waktu saat ini (besar) - Already correctly updating
                           Text(
                             _currentTime,
                             style: const TextStyle(
@@ -527,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          // Tanggal saat ini
+                          // Tanggal saat ini - Already correctly updating
                           Text(
                             _currentDate,
                             style: const TextStyle(
@@ -665,18 +697,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: AppColors.textDark,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            // Ini akan memicu refresh di AttendanceListScreen melalui Bottom Nav Bar
-                            MainBottomNavigationBar
-                                .refreshAttendanceNotifier
-                                .value = true;
-                          },
-                          child: const Text(
-                            'See More',
-                            style: TextStyle(color: AppColors.primary),
-                          ),
-                        ),
+                        // TextButton(
+                        //   onPressed: () {
+                        //     // Ini akan memicu refresh di AttendanceListScreen melalui Bottom Nav Bar
+                        //     MainBottomNavigationBar
+                        //         .refreshAttendanceNotifier
+                        //         .value = true;
+                        //   },
+                        //   child: const Text(
+                        //     'See More',
+                        //     style: TextStyle(color: AppColors.primary),
+                        //   ),
+                        // ),
                       ],
                     ),
                     const SizedBox(height: 10),

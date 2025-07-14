@@ -509,19 +509,15 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        centerTitle: true,
         automaticallyImplyLeading: false,
-        title: const Text('Attendance History'),
+        title: const Text(
+          'Attendance History',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.inputFill,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {
-              // Action for the add button, currently commented out
-            },
-            icon: const Icon(Icons.add),
-          ),
-        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

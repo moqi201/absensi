@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -19,36 +18,28 @@ class PersonReportScreen extends StatefulWidget {
 class _PersonReportScreenState extends State<PersonReportScreen> {
   final ApiService _apiService = ApiService();
 
-  late Future<void>
-  _reportDataFuture; // Changed to void as we update state directly
+  late Future<void> _reportDataFuture;
   DateTime _selectedMonth = DateTime(
     DateTime.now().year,
     DateTime.now().month,
     1,
   );
 
-  // Summary counts for the selected month - Initialized directly to avoid LateInitializationError
   int _presentCount = 0;
-  int _absentCount =
-      0; // Will now include all non-regular attendance types (izin)
-  int _lateInCount = 0; // Mapped from total_absen in AbsenceStats
-  int _totalWorkingDaysInMonth =
-      0; // Will be derived from presentCount for simplicity
-  String _totalWorkingHours = '0hr';
+  int _absentCount = 0;
+  int _lateInCount = 0;
+  int _calculatedTotalBasisForAttendanceTimeOff =
+      0; // Basis baru untuk Attendance dan Time Off
+  String _totalWorkingHours = '0hr 0min';
 
-  // Data for Pie Chart (will be repurposed for progress bars or removed if not needed)
-  List<PieChartSectionData> _pieChartSections = [];
-
-  // New state variables for Progress section (mock data for now)
-  final double _taskProgress = 0.8; // 80%
-  final double _completedTaskProgress = 0.6; // 60%
-  final double _hoursProgress = 0.75; // 75%
+  double _attendanceProgress = 0.0;
+  double _timeOffProgress = 0.0;
+  double _totalAbsenceLateProgress = 0.0; // Progres untuk total absen/terlambat
 
   @override
   void initState() {
     super.initState();
     _reportDataFuture = _fetchAndCalculateMonthlyReports();
-
     widget.refreshNotifier.addListener(_handleRefreshSignal);
   }
 
@@ -70,29 +61,38 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     }
   }
 
-  // Fetches attendance data and calculates monthly summaries
   Future<void> _fetchAndCalculateMonthlyReports() async {
     try {
-      // 1. Fetch Absence Stats for summary counts
       final ApiResponse<AbsenceStats> statsResponse =
           await _apiService.getAbsenceStats();
       if (statsResponse.statusCode == 200 && statsResponse.data != null) {
         final AbsenceStats stats = statsResponse.data!;
         setState(() {
           _presentCount = stats.totalMasuk;
-          _absentCount =
-              stats
-                  .totalIzin; // Assuming total_izin covers all types of absences/leaves
-          _lateInCount =
-              stats.totalAbsen; // Assuming total_absen covers late entries
-          _totalWorkingDaysInMonth =
-              stats
-                  .totalMasuk; // Simplified: Total working days = total present days
+          _absentCount = stats.totalIzin;
+          _lateInCount = stats.totalAbsen;
+
+          // Hitung basis untuk Attendance dan Time Off: hanya Hadir + Izin
+          _calculatedTotalBasisForAttendanceTimeOff =
+              _presentCount + _absentCount;
+
+          // Perhitungan Progres untuk Attendance dan Time Off:
+          // Dibagi hanya dari total hari Hadir dan Izin
+          _attendanceProgress =
+              _calculatedTotalBasisForAttendanceTimeOff > 0
+                  ? _presentCount / _calculatedTotalBasisForAttendanceTimeOff
+                  : 0.0;
+          _timeOffProgress =
+              _calculatedTotalBasisForAttendanceTimeOff > 0
+                  ? _absentCount / _calculatedTotalBasisForAttendanceTimeOff
+                  : 0.0;
+
+          // Progress Bar "Absences/Late": selalu 100% jika ada absen, 0% jika tidak ada
+          _totalAbsenceLateProgress = _lateInCount > 0 ? 1.0 : 0.0;
         });
       } else {
         print('Failed to get absence stats: ${statsResponse.message}');
-        _updateSummaryCounts(0, 0, 0, 0, '0hr'); // Reset counts on error
-        _updatePieChartData(0, 0, 0); // Reset pie chart data on error
+        _updateSummaryCounts(0, 0, 0, '0hr 0min');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -100,18 +100,16 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
             ),
           );
         }
-        return; // Exit if stats fetching fails
       }
 
-      // 2. Fetch Absence History for total working hours calculation
-      final String startDate = DateFormat('yyyy-MM-01').format(_selectedMonth);
-      final String endDate = DateFormat('yyyy-MM-dd').format(
-        DateTime(
-          _selectedMonth.year,
-          _selectedMonth.month + 1,
-          0,
-        ), // Last day of the month
+      // Bagian perhitungan Total Working Hours (tidak berubah)
+      final lastDayOfMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + 1,
+        0,
       );
+      final String startDate = DateFormat('yyyy-MM-01').format(_selectedMonth);
+      final String endDate = DateFormat('yyyy-MM-dd').format(lastDayOfMonth);
 
       final ApiResponse<List<Absence>> historyResponse = await _apiService
           .getAbsenceHistory(startDate: startDate, endDate: endDate);
@@ -119,14 +117,25 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       Duration totalWorkingDuration = Duration.zero;
       if (historyResponse.statusCode == 200 && historyResponse.data != null) {
         for (var absence in historyResponse.data!) {
-          // Only count working hours for 'masuk' entries that have both checkIn and checkOut
-          if (absence.status?.toLowerCase() ==
-                  'masuk' && // Safely call toLowerCase
-              absence.checkIn != null && // Added null check for checkIn
+          if (absence.status?.toLowerCase() == 'masuk' &&
+              absence.checkIn != null &&
               absence.checkOut != null) {
-            totalWorkingDuration += absence.checkOut!.difference(
-              absence.checkIn!, // Added null assertion for checkIn
-            );
+            try {
+              final DateTime checkIn = absence.checkIn!;
+              final DateTime checkOut = absence.checkOut!;
+
+              Duration dailyDuration;
+              if (checkOut.isBefore(checkIn)) {
+                dailyDuration = checkOut
+                    .add(const Duration(days: 1))
+                    .difference(checkIn);
+              } else {
+                dailyDuration = checkOut.difference(checkIn);
+              }
+              totalWorkingDuration += dailyDuration;
+            } catch (e) {
+              print('Error calculating time for absence ID ${absence.id}: $e');
+            }
           }
         }
       } else {
@@ -152,13 +161,9 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       setState(() {
         _totalWorkingHours = formattedTotalWorkingHours;
       });
-
-      // Update pie chart data after all counts are finalized
-      _updatePieChartData(_presentCount, _absentCount, _lateInCount);
     } catch (e) {
       print('Error fetching and calculating monthly reports: $e');
-      _updateSummaryCounts(0, 0, 0, 0, '0hr'); // Reset counts on error
-      _updatePieChartData(0, 0, 0); // Reset pie chart data on error
+      _updateSummaryCounts(0, 0, 0, '0hr 0min');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('An error occurred loading reports: $e')),
@@ -167,114 +172,45 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     }
   }
 
-  // Updates the state variables for summary counts
+  // Parameter _actualTotalDays dihapus karena tidak lagi menjadi basis umum
   void _updateSummaryCounts(
     int present,
     int absent,
     int late,
-    int totalWorkingDays,
     String totalHrs,
   ) {
     setState(() {
       _presentCount = present;
       _absentCount = absent;
       _lateInCount = late;
-      _totalWorkingDaysInMonth = totalWorkingDays;
       _totalWorkingHours = totalHrs;
+
+      // Hitung basis untuk Attendance dan Time Off: hanya Hadir + Izin
+      _calculatedTotalBasisForAttendanceTimeOff = _presentCount + _absentCount;
+
+      _attendanceProgress =
+          _calculatedTotalBasisForAttendanceTimeOff > 0
+              ? _presentCount / _calculatedTotalBasisForAttendanceTimeOff
+              : 0.0;
+      _timeOffProgress =
+          _calculatedTotalBasisForAttendanceTimeOff > 0
+              ? _absentCount / _calculatedTotalBasisForAttendanceTimeOff
+              : 0.0;
+
+      // Progress Bar "Absences/Late": selalu 100% jika ada absen, 0% jika tidak ada
+      _totalAbsenceLateProgress = _lateInCount > 0 ? 1.0 : 0.0;
     });
   }
 
-  // New method to update pie chart data (will be adapted or removed if no pie chart)
-  void _updatePieChartData(int presentCount, int absentCount, int lateInCount) {
-    // This method might not be directly used if we are not displaying a pie chart.
-    // However, keeping it for now in case pie chart is re-introduced or data is needed.
-    final total = presentCount + absentCount + lateInCount;
-    if (total == 0) {
-      setState(() {
-        _pieChartSections = [];
-      });
-      return;
-    }
+  // --- UI building methods (unchanged, kecuali bagian penjelasan) ---
 
-    const Color presentColor = Colors.green;
-    const Color absentColor = Colors.red;
-    const Color lateColor = Colors.orange;
-
-    setState(() {
-      _pieChartSections = [
-        if (presentCount > 0)
-          PieChartSectionData(
-            color: presentColor,
-            value: presentCount.toDouble(),
-            title: '${(presentCount / total * 100).toStringAsFixed(1)}%',
-            radius: 50,
-            titleStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            badgeWidget: _buildBadge('Present', presentColor),
-            badgePositionPercentageOffset: .98,
-          ),
-        if (absentCount > 0)
-          PieChartSectionData(
-            color: absentColor,
-            value: absentCount.toDouble(),
-            title: '${(absentCount / total * 100).toStringAsFixed(1)}%',
-            radius: 50,
-            titleStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            badgeWidget: _buildBadge('Absent', absentColor),
-            badgePositionPercentageOffset: .98,
-          ),
-        if (lateInCount > 0)
-          PieChartSectionData(
-            color: lateColor,
-            value: lateInCount.toDouble(),
-            title: '${(lateInCount / total * 100).toStringAsFixed(1)}%',
-            radius: 50,
-            titleStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            badgeWidget: _buildBadge('Late', lateColor),
-            badgePositionPercentageOffset: .98,
-          ),
-      ];
-    });
-  }
-
-  // Helper for PieChart badges (labels) - will be removed if no pie chart
-  Widget _buildBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  // Method to show month picker (only month and year)
   Future<void> _selectMonth(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedMonth,
       firstDate: DateTime(2000, 1, 1),
       lastDate: DateTime(2101, 12, 31),
-      initialDatePickerMode: DatePickerMode.year, // Start with year selection
+      initialDatePickerMode: DatePickerMode.year,
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
@@ -298,14 +234,12 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           newSelectedMonth.month != _selectedMonth.month) {
         setState(() {
           _selectedMonth = newSelectedMonth;
-          _reportDataFuture =
-              _fetchAndCalculateMonthlyReports(); // Trigger re-fetch
+          _reportDataFuture = _fetchAndCalculateMonthlyReports();
         });
       }
     }
   }
 
-  // Helper widget to build summary cards (adapted for the new design)
   Widget _buildOverviewCard({
     required String title,
     required String value,
@@ -344,7 +278,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     );
   }
 
-  // Helper widget for progress bars
   Widget _buildProgressBar({
     required String label,
     required double progress,
@@ -394,17 +327,14 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Analytics'), // Changed title to Analytics
+        centerTitle: true,
+        title: const Text(
+          'Analytics',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          // Add back button
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
       ),
       body: FutureBuilder<void>(
         future: _reportDataFuture,
@@ -417,9 +347,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          // Data is loaded, build the UI
           return SingleChildScrollView(
-            // Use SingleChildScrollView for overall scrollability
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -471,7 +399,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                     ],
                   ),
                 ),
-                // Overview Cards
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
@@ -491,9 +418,8 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                       ),
                       const SizedBox(width: 10),
                       _buildOverviewCard(
-                        title: 'Late',
-                        value:
-                            '$_lateInCount Hour', // Assuming lateInCount is in hours or can be converted
+                        title: 'Total Absence',
+                        value: '$_lateInCount Day',
                         color: AppColors.accentRed,
                         icon: Icons.access_time,
                       ),
@@ -501,7 +427,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Progress Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
@@ -520,7 +445,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                           ),
                           TextButton(
                             onPressed: () {
-                              // Handle View All for Progress
+                              // TODO: Implementasi View All untuk Progress jika diperlukan
                             },
                             child: const Text(
                               'View All',
@@ -531,25 +456,25 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                       ),
                       const SizedBox(height: 10),
                       _buildProgressBar(
-                        label: 'Task',
-                        progress: _taskProgress,
+                        label: 'Attendance',
+                        progress: _attendanceProgress,
                         color: AppColors.primary,
                       ),
                       _buildProgressBar(
-                        label: 'Completed Task',
-                        progress: _completedTaskProgress,
-                        color: AppColors.accentGreen,
+                        label: 'Time Off',
+                        progress: _timeOffProgress,
+                        color: AppColors.accentOrange,
                       ),
+                      // Progress bar untuk Absences/Late
                       _buildProgressBar(
-                        label: 'Hours',
-                        progress: _hoursProgress,
+                        label: 'total absence',
+                        progress: _totalAbsenceLateProgress,
                         color: AppColors.accentRed,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Total Working Hour (Bottom Section)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
@@ -578,18 +503,14 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                               Column(
                                 children: [
                                   Text(
-                                    DateFormat('EEE').format(
-                                      DateTime.now(),
-                                    ), // Current day of week
+                                    DateFormat('EEE').format(DateTime.now()),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
-                                    DateFormat('dd').format(
-                                      DateTime.now(),
-                                    ), // Current day number
+                                    DateFormat('dd').format(DateTime.now()),
                                     style: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -609,7 +530,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                                     ),
                                   ),
                                   Text(
-                                    _totalWorkingHours, // Re-using total working hours for "Productive Time"
+                                    _totalWorkingHours,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -629,7 +550,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                                     ),
                                   ),
                                   Text(
-                                    _totalWorkingHours, // Re-using total working hours for "Time at work"
+                                    _totalWorkingHours,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -645,7 +566,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20), // Add some bottom padding
+                const SizedBox(height: 20),
               ],
             ),
           );

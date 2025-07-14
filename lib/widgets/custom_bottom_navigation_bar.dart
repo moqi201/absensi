@@ -1,3 +1,4 @@
+import 'package:absensi/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// A customizable and reusable BottomNavigationBar widget.
@@ -33,7 +34,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         vertical: 10.0,
       ), // Margin dari tepi layar
       decoration: BoxDecoration(
-        color: Colors.red, // Latar belakang diubah menjadi merah
+        color: AppColors.primary, // Latar belakang diubah menjadi merah
         borderRadius: BorderRadius.circular(30), // Sudut bulat penuh
         boxShadow: [
           BoxShadow(
