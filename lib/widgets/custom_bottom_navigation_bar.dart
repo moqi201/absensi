@@ -1,4 +1,3 @@
-import 'package:absensi/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// A customizable and reusable BottomNavigationBar widget.
@@ -27,63 +26,115 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect( // Menggunakan ClipRRect untuk memberikan sudut bulat pada seluruh BottomAppBar
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(25), // Sudut atas yang bulat
-        bottom: Radius.circular(25), // Sudut bawah yang bulat
+    // Menggunakan Container untuk memberikan latar belakang berwarna dan sudut bulat
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 10.0, // Mengurangi margin horizontal agar lebih lebar
+        vertical: 10.0,
+      ), // Margin dari tepi layar
+      decoration: BoxDecoration(
+        color: Colors.red, // Latar belakang diubah menjadi merah
+        borderRadius: BorderRadius.circular(30), // Sudut bulat penuh
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      child: BottomAppBar(
-        color: Colors.white,
-        shape: const CircularNotchedRectangle(), // Hanya lekukan untuk FAB
-        notchMargin: 6.0, // Jarak antara FAB dan BottomAppBar
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <Widget>[
-            // Home (Index 0)
-            _buildNavItem(0, Icons.home, 'Home'),
-            // Profile (Index 1) - Menggunakan Icons.person sebagai contoh
-            _buildNavItem(1, Icons.person, 'Profile'),
-            // Placeholder for the FAB (center item) - tidak ada item di sini, hanya SizedBox
-            const SizedBox(width: 48), // Memberikan ruang untuk FAB
-            // Heart (Index 2) - Menggunakan Icons.favorite_border sebagai contoh
-            _buildNavItem(2, Icons.favorite_border, 'Likes'), // Indeks visual 2
-            // Notifications (Index 3) - Menggunakan Icons.notifications sebagai contoh
-            _buildNavItem(3, Icons.notifications, 'Notifs'), // Indeks visual 3
-          ],
+      child: ClipRRect(
+        // Memastikan konten di dalam juga mengikuti sudut bulat
+        borderRadius: BorderRadius.circular(30),
+        child: BottomAppBar(
+          color:
+              Colors
+                  .transparent, // Jadikan BottomAppBar transparan karena Container sudah menangani warna
+          elevation: 0, // Hilangkan bayangan default dari BottomAppBar
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: <Widget>[
+              // Item Home (Index 0)
+              _buildNavItem(0, Icons.home, 'Home'),
+              // Item Attendance (Index 1) - Menggunakan Icons.calendar_today
+              _buildNavItem(
+                1,
+                Icons.calendar_today,
+                '',
+              ), // Tidak ada label untuk item ini
+              // Item Report (Index 2) - Menggunakan Icons.bar_chart
+              _buildNavItem(
+                2,
+                Icons.bar_chart, // Ikon untuk Report
+                '',
+              ), // Tidak ada label untuk item ini
+              // Item Profile (Index 3) - Menggunakan Icons.person
+              _buildNavItem(
+                3,
+                Icons.person,
+                '',
+              ), // Tidak ada label untuk item ini
+            ],
+          ),
         ),
       ),
     );
   }
 
+  /// Membangun item navigasi individu untuk BottomNavigationBar.
+  ///
+  /// [index] adalah indeks item navigasi.
+  /// [icon] adalah ikon yang akan ditampilkan untuk item ini.
+  /// [label] adalah teks label yang akan ditampilkan di bawah ikon.
   Widget _buildNavItem(int index, IconData icon, String label) {
-    // `index` di sini adalah indeks visual item di BottomAppBar (0, 1, 2, 3).
-    // `currentIndex` adalah `_selectedIndex` dari MainBottomNavigationBar.
-    // Item disorot jika indeks visualnya cocok dengan `_selectedIndex`.
     bool isSelected = (currentIndex == index);
+    // Warna keemasan untuk latar belakang item yang dipilih
+    // Color selectedItemColor = const Color(0xFFD4AF37); // Dihapus karena tidak digunakan untuk latar belakang
 
     return Expanded(
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => onTap(index), // Meneruskan indeks visual (0,1,2,3)
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          onTap: () => onTap(index), // Meneruskan indeks yang ditekan
+          borderRadius: BorderRadius.circular(25), // Sudut bulat untuk efek tap
+          child: AnimatedContainer(
+            // Menggunakan AnimatedContainer untuk transisi halus
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.symmetric(
+              vertical: 18.0, // Ukuran vertikal tetap
+              horizontal: 8.0, // Padding horizontal seragam untuk semua item
+            ),
+            // Dekorasi latar belakang kuning dihapus
+            decoration: null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize:
+                  MainAxisSize.min, // Menyusut agar sesuai dengan konten
               children: [
                 Icon(
                   icon,
-                  color: isSelected ? Colors.pink : Colors.grey, // Warna ikon disesuaikan
+                  // Warna ikon: putih untuk yang dipilih, putih sedikit pudar untuk yang tidak dipilih
+                  color: isSelected ? Colors.white : Colors.white70,
+                  size: 24,
                 ),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? Colors.pink : Colors.grey, // Warna teks disesuaikan
-                    fontSize: 12,
+                // Hanya tampilkan label jika item dipilih DAN label tidak kosong
+                if (isSelected && label.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white, // Warna teks putih saat dipilih
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow:
+                          TextOverflow
+                              .ellipsis, // Potong teks jika terlalu panjang
+                      maxLines: 1, // Batasi teks hanya pada satu baris
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis, // Memastikan teks dipotong dengan elipsis jika terlalu panjang
-                  maxLines: 1, // Membatasi teks hanya pada satu baris
-                ),
               ],
             ),
           ),

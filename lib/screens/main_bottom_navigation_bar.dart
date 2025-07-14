@@ -1,9 +1,7 @@
-import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/screens/attendance/attendance_list_screen.dart'; // Digunakan untuk item "Documents"
-import 'package:absensi/screens/attendance/request_screen.dart'; // Digunakan untuk FAB tengah
 import 'package:absensi/screens/auth/profile_screen.dart'; // Digunakan untuk item "Notifications"
-import 'package:absensi/screens/home_screen.dart';
-import 'package:absensi/screens/reports/person_report_screen.dart'; // Digunakan untuk item "Tools/Utilities"
+import 'package:absensi/screens/home_screen.dart'; // Digunakan untuk item "Tools/Utilities"
+import 'package:absensi/screens/reports/person_report_screen.dart';
 import 'package:absensi/widgets/custom_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -31,13 +29,11 @@ class MainBottomNavigationBar extends StatefulWidget {
 class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   // _selectedIndex akan merepresentasikan indeks layar yang ditampilkan di IndexedStack.
   // 0: Home
-  // 1: Tools/Utilities (PersonReportScreen)
-  // 2: Documents (AttendanceListScreen)
-  // 3: Notifications (ProfileScreen)
+  // 1: Documents (AttendanceListScreen) - Sesuai dengan Icons.calendar_today di CustomBottomNavigationBar
+  // 2: Notifications (ProfileScreen) - Sesuai dengan Icons.person di CustomBottomNavigationBar
   int _selectedIndex = 0; // Mulai dengan tab Home (indeks 0)
 
-  // State untuk mengontrol tampilan FAB (tambah atau silang)
-  bool _isRequestScreenOpen = false;
+  // _isRequestScreenOpen dan logika terkait FloatingActionButton dihapus
 
   late final List<Widget> _widgetOptions;
 
@@ -47,18 +43,20 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     _widgetOptions = <Widget>[
       // Index 0: Home
       HomeScreen(refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier),
-      // Index 1: Tools/Utilities (placeholder PersonReportScreen)
-      PersonReportScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
-      ),
-      // Index 2: Documents (placeholder AttendanceListScreen)
+      // Index 1: Documents (AttendanceListScreen)
       AttendanceListScreen(
         refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
       ),
-      // Index 3: Notifications (placeholder ProfileScreen)
+      PersonReportScreen(
+        refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
+      ),
+
+      // Index 2: Notifications (ProfileScreen)
       ProfileScreen(
         refreshNotifier: MainBottomNavigationBar.refreshSettingsNotifier,
       ),
+
+      // PersonReportScreen (sebelumnya Index 1) dihapus dari navigasi bawah
     ];
   }
 
@@ -66,8 +64,8 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   ///
   /// Memperbarui [_selectedIndex] untuk mengganti layar yang ditampilkan di IndexedStack.
   void _onItemTapped(int index) {
-    // `index` yang diterima di sini adalah indeks visual dari CustomBottomNavigationBar (0, 1, 2, 3).
-    // Ini langsung cocok dengan indeks di `_widgetOptions`.
+    // `index` yang diterima di sini adalah indeks visual dari CustomBottomNavigationBar (0, 1, 2).
+    // Ini langsung cocok dengan indeks di `_widgetOptions` yang baru.
     if (_selectedIndex != index) {
       setState(() {
         _selectedIndex = index;
@@ -77,50 +75,27 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     // Penanganan khusus untuk menyegarkan layar
     if (index == 0) {
       MainBottomNavigationBar.refreshHomeNotifier.value = true;
-    } else if (index == 1) { // Tools
-      MainBottomNavigationBar.refreshReportsNotifier.value = true;
-    } else if (index == 2) { // Documents
+    } else if (index == 1) {
+      // Documents (sekarang di indeks 1)
       MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
-    } else if (index == 3) { // Notifications
+    } else if (index == 2) {
+      // Notifications (sekarang di indeks 2)
+      MainBottomNavigationBar.refreshReportsNotifier.value = true;
+    } else if (index == 3) {
+      // Notifications (sekarang di indeks 2)
       MainBottomNavigationBar.refreshSettingsNotifier.value = true;
     }
+    // Logika untuk index 3 (sebelumnya PersonReportScreen) dihapus
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          if (_isRequestScreenOpen) {
-            // Jika RequestScreen terbuka, tutup
-            Navigator.of(context).pop();
-          } else {
-            // Jika RequestScreen tidak terbuka, buka
-            setState(() {
-              _isRequestScreenOpen = true; // Set state FAB ke 'X'
-            });
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const RequestScreen()),
-            ).then((_) {
-              // Ketika RequestScreen ditutup, kembalikan state FAB ke '+'
-              setState(() {
-                _isRequestScreenOpen = false;
-              });
-            });
-          }
-        },
-        backgroundColor: Colors.pink, // Warna FAB sesuai gambar
-        shape: const CircleBorder(),
-        child: Icon(
-          _isRequestScreenOpen ? Icons.close : Icons.add, // Ikon FAB berubah
-          color: Colors.white,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // FloatingActionButton dan floatingActionButtonLocation dihapus
       bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: _selectedIndex, // Meneruskan indeks layar yang sedang aktif
+        currentIndex:
+            _selectedIndex, // Meneruskan indeks layar yang sedang aktif
         onTap: _onItemTapped, // Meneruskan callback untuk menangani tap tab
       ),
     );

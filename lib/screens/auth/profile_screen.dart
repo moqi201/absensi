@@ -7,7 +7,6 @@ import 'package:absensi/screens/auth/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Keep this import for DateFormat if you use it for displaying dates in UI
 
-
 class ProfileScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
 
@@ -160,7 +159,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               height: 180, // Slightly reduced height for a cleaner look
               decoration: const BoxDecoration(
-                color: AppColors.primary, // Solid primary color for a cleaner look
+                color:
+                    AppColors.primary, // Solid primary color for a cleaner look
                 borderRadius: BorderRadius.vertical(
                   bottom: Radius.circular(25), // Softer rounded bottom
                 ),
@@ -180,34 +180,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Conditional rendering: Show CircularProgressIndicator while _isLoading is true
           _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(), // Show loading indicator
-                )
-              : RefreshIndicator( // Add RefreshIndicator for pull-to-refresh
-                  onRefresh: _loadUserData,
-                  child: ListView(
-                    padding: const EdgeInsets.only(top: 100, bottom: 20), // Adjust top padding to overlap with background
-                    children: [
-                      // Profile Header Section (Avatar, Name, Designation, Joined Date)
-                      _buildProfileHeader(
-                        username,
-                        designation,
-                        formattedJoinedDate, // Pass the correctly formatted date
-                        profilePhotoUrl, // Pass URL/path string
-                      ),
-                      const SizedBox(height: 20), // Space between sections
-                      // User Details Card
-                      _buildUserDetailsCard(
-                        email,
-                        _currentUser?.batch_ke, // Pass batch_ke
-                        jenisKelamin, // Pass jenisKelamin
-                      ),
-                      const SizedBox(height: 20),
+                child: CircularProgressIndicator(), // Show loading indicator
+              )
+              : RefreshIndicator(
+                // Add RefreshIndicator for pull-to-refresh
+                onRefresh: _loadUserData,
+                child: ListView(
+                  padding: const EdgeInsets.only(
+                    top: 100,
+                    bottom: 20,
+                  ), // Adjust top padding to overlap with background
+                  children: [
+                    // Profile Header Section (Avatar, Name, Designation, Joined Date)
+                    _buildProfileHeader(
+                      username,
+                      designation,
+                      formattedJoinedDate, // Pass the correctly formatted date
+                      profilePhotoUrl, // Pass URL/path string
+                    ),
+                    const SizedBox(height: 20), // Space between sections
+                    // User Details Card
+                    _buildUserDetailsCard(
+                      email,
+                      _currentUser?.batch_ke, // Pass batch_ke
+                      jenisKelamin, // Pass jenisKelamin
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Settings and Logout Options
-                      _buildActionOptions(),
-                    ],
-                  ),
+                    // Settings and Logout Options
+                    _buildActionOptions(),
+                  ],
                 ),
+              ),
         ],
       ),
     );
@@ -226,8 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final String fullImageUrl =
           profilePhotoPath.startsWith('http')
               ? profilePhotoPath
-              : 'https://appabsensi.mobileprojp.com/public/' +
-                  profilePhotoPath; // Adjusted base path
+              : 'https://appabsensi.mobileprojp.com/public/$profilePhotoPath'; // Adjusted base path
       imageProvider = NetworkImage(fullImageUrl);
     }
 
@@ -258,11 +261,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 imageProvider ==
                         null // Show icon only if no valid image provider
                     ? const Icon(
-                        Icons
-                            .person, // Fallback icon if no image URL or local file
-                        size: 50, // Adjusted icon size
-                        color: Colors.white,
-                      )
+                      Icons
+                          .person, // Fallback icon if no image URL or local file
+                      size: 50, // Adjusted icon size
+                      color: Colors.white,
+                    )
                     : null, // No child if an image is loading
           ),
         ),
@@ -283,18 +286,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               designation,
-              style: TextStyle(fontSize: 15, color: Colors.grey[600]), // Softer grey
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[600],
+              ), // Softer grey
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
                 '•', // Menggunakan bullet point sebagai separator
-                style: TextStyle(fontSize: 15, color: Colors.grey[600]), // Softer grey
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[600],
+                ), // Softer grey
               ),
             ),
             Text(
               'Joined $joinedDate', // Corrected: Use 'joinedDate' parameter here
-              style: TextStyle(fontSize: 15, color: Colors.grey[600]), // Softer grey
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[600],
+              ), // Softer grey
             ),
           ],
         ),
