@@ -1,3 +1,4 @@
+// lib/widgets/custom_date_input.dart (atau di mana pun file ini berada)
 
 import 'package:absensi/constants/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -61,11 +62,15 @@ class CustomDateInputField extends StatelessWidget {
         child: Text(
           selectedDate == null
               ? hintText ?? 'Select ${labelText.toLowerCase()}'
-              : DateFormat('yyyy-MM-dd').format(selectedDate!),
+              // --- PERUBAHAN UTAMA DI SINI ---
+              // Mengubah format tampilan menjadi Bulan Nama Tahun
+              : DateFormat('MMMM yyyy').format(selectedDate!),
+          // --- AKHIR PERUBAHAN ---
           style: TextStyle(
-            color: selectedDate == null
-                ? AppColors.placeholder
-                : AppColors.textDark, // Consistent placeholder/text color
+            color:
+                selectedDate == null
+                    ? AppColors.placeholder
+                    : AppColors.textDark, // Consistent placeholder/text color
             fontSize: 16,
           ),
         ),

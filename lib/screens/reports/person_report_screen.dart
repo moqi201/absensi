@@ -549,25 +549,34 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                             children: [
                               Column(
                                 children: [
-                                  // Ini akan menampilkan hari dan tanggal saat ini, bukan yang difilter.
-                                  // Jika ingin menampilkan hari dan tanggal DARI bulan yang dipilih,
-                                  // misalnya hari pertama bulan yang dipilih, Anda bisa ganti DateTime.now()
-                                  // dengan _selectedMonth atau DateTime(_selectedMonth.year, _selectedMonth.month, 1)
                                   Text(
-                                    DateFormat('EEE').format(DateTime.now()),
+                                    // Hanya menampilkan nama bulan
+                                    DateFormat('yyyy').format(_selectedMonth),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
                                     ),
                                   ),
                                   Text(
-                                    DateFormat('dd').format(DateTime.now()),
+                                    // Jika ingin menampilkan tahun di bawah bulan, bisa seperti ini
+                                    DateFormat('MMM').format(_selectedMonth),
                                     style: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.primary,
                                     ),
                                   ),
+                                  // Atau, jika Anda benar-benar hanya ingin "July" tanpa tanggal/tahun lain,
+                                  // Anda bisa hanya punya satu Text widget dengan format MMMM.
+                                  // Contoh:
+                                  // Text(
+                                  //   DateFormat('MMMM').format(_selectedMonth),
+                                  //   style: const TextStyle(
+                                  //     fontSize: 24,
+                                  //     fontWeight: FontWeight.bold,
+                                  //     color: AppColors.primary,
+                                  //   ),
+                                  // ),
                                 ],
                               ),
                               Column(
