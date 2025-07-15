@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/constants/app_text_styles.dart';
 import 'package:absensi/data/service/api_service.dart';
@@ -74,10 +73,12 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _fadeAnimation,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.access_alarm, size: 90, color: AppColors.primary),
-              SizedBox(height: 20),
-              Text('ClockIn', style: AppTextStyles.heading),
+            children: [
+              Image.asset(
+                'assets/images/logomerah.png',
+                width: 200,
+                height: 200,
+              ),
               SizedBox(height: 10),
               Text(
                 'Welcome to the future of attendance!',
