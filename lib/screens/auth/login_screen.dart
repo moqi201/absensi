@@ -97,112 +97,243 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(
-                  child: Icon(Icons.lock, size: 100, color: AppColors.primary),
-                ),
-                const SizedBox(height: 20),
-                const Text("Welcome Back", style: AppTextStyles.heading),
-                const SizedBox(height: 10),
-                const Text("Login to continue", style: AppTextStyles.normal),
-                const SizedBox(height: 30),
-
-                // Email
-                CustomInputField(
-                  controller: _emailController,
-                  hintText: 'Email',
-                  icon: Icons.email_outlined,
-                  customValidator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Email cannot be empty';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Password
-                CustomInputField(
-                  controller: _passwordController,
-                  hintText: 'Password',
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  obscureText: !_isPasswordVisible,
-                  toggleVisibility: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
-                  customValidator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password cannot be empty';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10), // Added spacing
-                // --- Forgot Password Button ---
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () {
-                      // Navigate to the Forgot Password screen
-                      Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                    },
-                    child: const Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+      body: Stack(
+        // Use Stack to place the wave behind the content
+        children: [
+          // Top Wave Background with Gradient
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              clipper: WaveClipper(), // Custom clipper for the wave shape
+              child: Container(
+                height: 250, // Height of the wave section
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.accentRed,
+                    ], // Use a gradient for a richer look
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-
-                // --- End Forgot Password Button ---
-                const SizedBox(height: 30),
-
-                // Login Button
-                _isLoading
-                    ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    )
-                    : PrimaryButton(label: 'Login', onPressed: _login),
-                const SizedBox(height: 20),
-
-                // Go to register
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              ),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Don't have an account? "),
-                    GestureDetector(
-                      onTap:
-                          () =>
-                              Navigator.pushNamed(context, AppRoutes.register),
-                      child: const Text(
-                        "Sign up",
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                    // Increased space for the wave effect
+                    // --- Logo Section ---
+                    Center(
+                      child: Image.asset(
+                        'assets/images/logo.png', // Path to your logo image
+                        height: 120, // Adjust height as needed
+                        width: 120, // Adjust width as needed
+                        // You can add fit: BoxFit.contain or BoxFit.cover if needed
+                      ),
+                    ),
+                    const SizedBox(height: 60), // Spacing after the logo
+                    // --- End Logo Section ---
+                    const Text("Welcome Back", style: AppTextStyles.heading),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Login to continue",
+                      style: AppTextStyles.normal,
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Email Input Field with Shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(
+                              0,
+                              3,
+                            ), // changes position of shadow
+                          ),
+                        ],
+                      ),
+                      child: CustomInputField(
+                        controller: _emailController,
+                        hintText: 'Email',
+                        icon: Icons.email_outlined,
+                        customValidator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Email cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Password Input Field with Shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(
+                              0,
+                              3,
+                            ), // changes position of shadow
+                          ),
+                        ],
+                      ),
+                      child: CustomInputField(
+                        controller: _passwordController,
+                        hintText: 'Password',
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                        obscureText: !_isPasswordVisible,
+                        toggleVisibility: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                        customValidator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Password cannot be empty';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10), // Added spacing
+                    // --- Forgot Password Button ---
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to the Forgot Password screen
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.forgotPassword,
+                          );
+                        },
+                        child: const Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
+
+                    // --- End Forgot Password Button ---
+                    const SizedBox(height: 30),
+
+                    // Login Button with Shadow
+                    _isLoading
+                        ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                        )
+                        : Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(
+                                  0.3,
+                                ), // Shadow color based on primary color
+                                spreadRadius: 3,
+                                blurRadius: 7,
+                                offset: const Offset(
+                                  0,
+                                  5,
+                                ), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          child: PrimaryButton(
+                            label: 'Login',
+                            onPressed: _login,
+                          ),
+                        ),
+                    const SizedBox(height: 20),
+
+                    // Go to register
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Don't have an account? "),
+                        GestureDetector(
+                          onTap:
+                              () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.register,
+                              ),
+                          child: const Text(
+                            "Sign up",
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
+  }
+}
+
+// Custom Clipper for the wave shape at the top
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 50); // Start from bottom-left of the wave
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2, size.height - 30);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+
+    var secondControlPoint = Offset(size.width * 3 / 4, size.height - 80);
+    var secondEndPoint = Offset(size.width, size.height - 50);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+
+    path.lineTo(size.width, 0); // Go to top-right
+    path.close(); // Close the path
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return false; // No need to reclip unless the size changes
   }
 }

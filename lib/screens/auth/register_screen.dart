@@ -20,12 +20,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  // Removed _confirmPasswordController
   final ApiService _apiService = ApiService(); // Instantiate your ApiService
 
   bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  // Removed _isConfirmPasswordVisible
   bool _isLoading = false; // Add loading state
 
   List<Batch> _batches = []; // Keep this to fetch batches and find "Batch 2"
@@ -140,12 +139,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         return;
       }
-      if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
-        return;
-      }
+      // Removed password confirmation check
+      // if (_passwordController.text != _confirmPasswordController.text) {
+      //   ScaffoldMessenger.of(
+      //     context,
+      //   ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      //   return;
+      // }
 
       setState(() {
         _isLoading = true; // Set loading to true
@@ -199,24 +199,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    // Removed _confirmPasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: SingleChildScrollView(
+      backgroundColor: AppColors.background, // Changed to AppColors.background
+      body: Stack(
+        children: [
+          // Top Wave Background with Gradient
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              clipper: WaveClipper(), // Custom clipper for the wave shape
+              child: Container(
+                height: 200, // Height of the wave section
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.accentRed,
+                    ], // Use a gradient for a richer look
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Main content without SingleChildScrollView
+          SafeArea(
+            // Keep SafeArea to avoid system UI overlap
+            child: Padding(
+              // Apply padding directly to the content
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Adjust spacing at the top to account for the wave
+                    // Increased space for the wave effect
+                    // --- Logo Section ---
+                    Center(
+                      child: Image.asset(
+                        'assets/images/logo.png', // Path to your logo image
+                        height: 120, // Adjust height as needed
+                        width: 120, // Adjust width as needed
+                      ),
+                    ),
+                    const SizedBox(height: 30), // Spacing after the logo
+                    // --- End Logo Section ---
                     Text(
                       "Create Account",
                       style: AppTextStyles.heading.copyWith(
@@ -224,120 +261,187 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         fontSize: 28,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Join us to track your attendance effortlessly.",
-                      style: AppTextStyles.normal.copyWith(
-                        color: Colors.grey[600],
-                        fontSize: 16,
+
+                    const SizedBox(height: 20),
+
+                    // Username Input Field with Shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        // Removed borderRadius from here
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CustomInputField(
+                        controller: _nameController,
+                        hintText: "Name",
+                        icon: Icons.person_outline,
+                        // Removed borderRadius from here
+                        customValidator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Name cannot be empty';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
 
-                    // Username
-                    CustomInputField(
-                      controller: _nameController,
-                      hintText: "Name",
-                      icon: Icons.person_outline,
-                      customValidator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Name cannot be empty';
-                        }
-                        return null;
-                      },
+                    // Email Input Field with Shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        // Removed borderRadius from here
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CustomInputField(
+                        controller: _emailController,
+                        hintText: "Email",
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        // Removed borderRadius from here
+                        customValidator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Email cannot be empty';
+                          }
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Email
-                    CustomInputField(
-                      controller: _emailController,
-                      hintText: "Email",
-                      icon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                      customValidator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Email cannot be empty';
-                        }
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                          return 'Enter a valid email address';
-                        }
-                        return null;
-                      },
+                    // Password Input Field with Shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        // Removed borderRadius from here
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CustomInputField(
+                        controller: _passwordController,
+                        hintText: "Password",
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                        obscureText: !_isPasswordVisible,
+                        // Removed borderRadius from here
+                        toggleVisibility:
+                            () => setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            }),
+                        customValidator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Password cannot be empty';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters long';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Password
-                    CustomInputField(
-                      controller: _passwordController,
-                      hintText: "Password",
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                      obscureText: !_isPasswordVisible,
-                      toggleVisibility:
-                          () => setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          }),
-                      customValidator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password cannot be empty';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters long';
-                        }
-                        return null;
-                      },
+                    // Removed Confirm Password Field
+                    // Container(
+                    //   decoration: const BoxDecoration(
+                    //     boxShadow: [
+                    //       BoxShadow(
+                    //         color: Colors.grey.withOpacity(0.2),
+                    //         spreadRadius: 2,
+                    //         blurRadius: 5,
+                    //         offset: Offset(0, 3),
+                    //       ),
+                    //     ],
+                    //   ),
+                    //   child: CustomInputField(
+                    //     controller: _confirmPasswordController,
+                    //     hintText: "Confirm Password",
+                    //     icon: Icons.lock_outline,
+                    //     isPassword: true,
+                    //     obscureText: !_isConfirmPasswordVisible,
+                    //     toggleVisibility:
+                    //         () => setState(() {
+                    //           _isConfirmPasswordVisible =
+                    //               !_isConfirmPasswordVisible;
+                    //         }),
+                    //     customValidator: (value) {
+                    //       if (value == null || value.isEmpty) {
+                    //         return 'Confirm password cannot be empty';
+                    //       }
+                    //       if (value != _passwordController.text) {
+                    //         return 'Passwords do not match';
+                    //       }
+                    //       return null;
+                    //     },
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 16),
+
+                    // Jenis Kelamin Dropdown with Shadow
+                    Container(
+                      decoration: BoxDecoration(
+                        // Removed borderRadius from here
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: CustomDropdownInputField<String>(
+                        labelText: 'Select Gender',
+                        hintText: 'Select Gender',
+                        icon: Icons.people_outline,
+                        value: _selectedGender,
+                        // Removed borderRadius from here
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'L',
+                            child: Text('Laki-laki'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'P',
+                            child: Text('Perempuan'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedGender = newValue;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select your gender';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Confirm Password
-                    CustomInputField(
-                      controller: _confirmPasswordController,
-                      hintText: "Confirm Password",
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                      obscureText: !_isConfirmPasswordVisible,
-                      toggleVisibility:
-                          () => setState(() {
-                            _isConfirmPasswordVisible =
-                                !_isConfirmPasswordVisible;
-                          }),
-                      customValidator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Confirm password cannot be empty';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Jenis Kelamin Dropdown
-                    CustomDropdownInputField<String>(
-                      labelText: 'Select Gender',
-                      hintText: 'Select Gender',
-                      icon: Icons.people_outline,
-                      value: _selectedGender,
-                      items: const [
-                        DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
-                        DropdownMenuItem(value: 'P', child: Text('Perempuan')),
-                      ],
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedGender = newValue;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Please select your gender';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Display Batch Name (not a dropdown)
+                    // Display Batch Name (not a dropdown) with Shadow
                     _isLoading
                         ? const Center(
                           child: CircularProgressIndicator(
@@ -350,9 +454,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             vertical: 18,
                           ),
                           decoration: BoxDecoration(
+                            // Removed borderRadius from here
                             color: AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: AppColors.border),
+                            boxShadow: [
+                              // Add shadow here
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Row(
                             children: [
@@ -375,41 +488,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                     const SizedBox(height: 16),
 
-                    // Training Dropdown using CustomDropdownInputField
+                    // Training Dropdown using CustomDropdownInputField with Shadow
                     _isLoading
                         ? const SizedBox.shrink()
-                        : CustomDropdownInputField<int>(
-                          labelText: 'Select Training',
-                          hintText: 'Select Training',
-                          icon: Icons.school_outlined,
-                          value: _selectedTrainingId,
-                          items:
-                              _trainings.map((training) {
-                                return DropdownMenuItem<int>(
-                                  value: training.id,
-                                  child: Text(training.title),
-                                );
-                              }).toList(),
-                          onChanged: (int? newValue) {
-                            setState(() {
-                              _selectedTrainingId = newValue;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Please select a training';
-                            }
-                            return null;
-                          },
-                          menuMaxHeight: 300.0, // Apply menuMaxHeight here
+                        : Container(
+                          decoration: BoxDecoration(
+                            // Removed borderRadius from here
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: CustomDropdownInputField<int>(
+                            labelText: 'Select Training',
+                            hintText: 'Select Training',
+                            icon: Icons.school_outlined,
+                            value: _selectedTrainingId,
+                            // Removed borderRadius from here
+                            items:
+                                _trainings.map((training) {
+                                  return DropdownMenuItem<int>(
+                                    value: training.id,
+                                    child: Text(training.title),
+                                  );
+                                }).toList(),
+                            onChanged: (int? newValue) {
+                              setState(() {
+                                _selectedTrainingId = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a training';
+                              }
+                              return null;
+                            },
+                            menuMaxHeight: 300.0, // Apply menuMaxHeight here
+                          ),
                         ),
                     const SizedBox(height: 32),
 
+                    // Register Button with Shadow
                     _isLoading
-                        ? const Center()
-                        : PrimaryButton(
-                          label: "Register",
-                          onPressed: _register,
+                        ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                        )
+                        : Container(
+                          decoration: BoxDecoration(
+                            // Removed borderRadius from here
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                spreadRadius: 3,
+                                blurRadius: 7,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: PrimaryButton(
+                            label: "Register",
+                            onPressed: _register,
+                            // Removed borderRadius from here
+                          ),
                         ),
                     const SizedBox(height: 20),
 
@@ -440,8 +586,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
+  }
+}
+
+// Custom Clipper for the wave shape at the top
+// This class needs to be added to your RegisterScreen.dart file
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 50); // Start from bottom-left of the wave
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2, size.height - 30);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+
+    var secondControlPoint = Offset(size.width * 3 / 4, size.height - 80);
+    var secondEndPoint = Offset(size.width, size.height - 50);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+
+    path.lineTo(size.width, 0); // Go to top-right
+    path.close(); // Close the path
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return false; // No need to reclip unless the size changes
   }
 }
