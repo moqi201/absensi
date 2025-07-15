@@ -104,7 +104,7 @@ class _CustomCardHistoryState extends State<CustomCardHistory> {
                 ),
                 Text(
                   DateFormat(
-                    'MMM',
+                    'MMMM',
                   ).format(widget.absence.attendanceDate!), // Bulan
                   style: TextStyle(
                     fontSize: 14,

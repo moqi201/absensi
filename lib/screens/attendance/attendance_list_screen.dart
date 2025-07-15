@@ -227,7 +227,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       children: [
                         Text(
                           DateFormat(
-                            'MMM yyyy',
+                            'MMMM yyyy',
                           ).format(_selectedMonth).toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
