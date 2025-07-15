@@ -57,10 +57,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (pickedFile != null) {
       setState(() {
         _pickedImage = File(pickedFile.path);
+        // Convert image to base64 for upload
+        List<int> imageBytes =
+            _pickedImage!.readAsBytesSync(); // Menggunakan readAsBytesSync
+        _profilePhotoBase64 = base64Encode(imageBytes);
       });
-      // Convert image to base64 for upload
-      List<int> imageBytes = await _pickedImage!.readAsBytes();
-      _profilePhotoBase64 = base64Encode(imageBytes);
     }
   }
 
@@ -204,86 +205,131 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final String fullImageUrl =
           _initialProfilePhotoUrl!.startsWith('http')
               ? _initialProfilePhotoUrl!
-              : 'https://appabsensi.mobileprojp.com/public/' +
-                  _initialProfilePhotoUrl!; // Adjust base path as needed
+              : 'https://appabsensi.mobileprojp.com/public/${_initialProfilePhotoUrl!}'; // Adjust base path as needed
       currentImageProvider = NetworkImage(fullImageUrl);
+    } else {
+      // THIS IS THE NEW PART: If no picked image and no initial URL,
+      // use a default image based on gender.
+      String defaultImageUrl;
+      // Assuming 'widget.currentUser.jenis_kelamin' is accessible here
+      // and 'P' means female.
+      if (widget.currentUser.jenis_kelamin == 'P') {
+        defaultImageUrl =
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTePvPIcfgyTA_2uby6QSsAG7PDe0Ai1Pv9x6cpYZYRGyxKSufwKmkibEpGZDw1fw5JUSs&usqp=CAU'; // Female default image
+      } else {
+        defaultImageUrl =
+            'https://avatar.iran.liara.run/public/boy?username=Ash'; // Male default image
+      }
+      currentImageProvider = NetworkImage(defaultImageUrl);
     }
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: const Text(
+          'Edit Profil', // Mengganti teks AppBar
+          style: TextStyle(
+            fontWeight: FontWeight.bold, // Membuat teks lebih tebal
+            color: Colors.white, // Warna teks putih
+          ),
+        ),
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ), // Warna ikon kembali
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24.0,
+          vertical: 32.0,
+        ), // Padding lebih merata
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.stretch, // Membentangkan elemen
             children: [
+              // Bagian Foto Profil
               Center(
-                child: Column(
+                child: Stack(
                   children: [
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundColor: AppColors.primary.withOpacity(0.2),
-                        backgroundImage:
-                            currentImageProvider, // Use the determined image provider
-                        child:
-                            currentImageProvider == null
-                                ? const Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: AppColors.textLight,
-                                )
-                                : null,
-                      ),
+                    CircleAvatar(
+                      radius: 70, // Sedikit lebih besar
+                      backgroundColor: AppColors.primary.withOpacity(
+                        0.1,
+                      ), // Warna background yang lembut
+                      backgroundImage: currentImageProvider,
+                      child:
+                          currentImageProvider == null
+                              ? Icon(
+                                Icons.person,
+                                size: 70, // Ukuran ikon disesuaikan
+                                color: AppColors.textLight.withOpacity(
+                                  0.6,
+                                ), // Warna ikon lebih lembut
+                              )
+                              : null,
                     ),
-                    const SizedBox(height: 10),
-                    TextButton(
-                      onPressed: _pickImage,
-                      child: Text(
-                        _pickedImage != null ||
-                                (_initialProfilePhotoUrl != null &&
-                                    _initialProfilePhotoUrl!.isNotEmpty)
-                            ? 'Change Photo'
-                            : 'Upload Photo',
-                        style: const TextStyle(color: AppColors.primary),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primary, // Warna tombol ubah foto
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.background,
+                              width: 2,
+                            ), // Border putih
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(
-                height: 24,
-              ), // Space between image section and first input
-              // Username (editable) using CustomInputField
+              const SizedBox(height: 32), // Jarak lebih besar setelah foto
+              // Bagian Informasi Profil
+              const Text(
+                'Informasi Pribadi',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Nama (Editable)
               CustomInputField(
                 controller: _nameController,
-                hintText: 'Name',
-                labelText: 'Name',
-                icon: Icons.person,
+                hintText: 'Nama Lengkap', // Hint yang lebih deskriptif
+                labelText: 'Nama',
+                icon: Icons.person_outline, // Ikon yang sedikit berbeda
                 customValidator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Name cannot be empty';
+                    return 'Nama tidak boleh kosong';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-
-              // Save Button using PrimaryButton
+              const SizedBox(height: 24), // Jarak antara input field dan tombol
+              // Tombol Simpan
               _isLoading
                   ? const Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
                   : PrimaryButton(
-                    label: 'Save Profile',
+                    label: 'Simpan Perubahan', // Teks tombol lebih jelas
                     onPressed: _saveProfile,
                   ),
             ],

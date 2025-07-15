@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _currentDate = '';
   String _currentTime = '';
   Timer? _timer;
+  User? _currentUser;
 
   AbsenceToday? _todayAbsence;
   AbsenceStats? _absenceStats;
@@ -528,7 +529,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   shape: BoxShape.circle,
                                   color: Colors.white.withOpacity(0.3),
                                   image:
-                                      _profilePhotoUrl.isNotEmpty
+                                      _profilePhotoUrl
+                                              .isNotEmpty // Jika ada URL foto profil dari API
                                           ? DecorationImage(
                                             image: NetworkImage(
                                               _profilePhotoUrl.startsWith(
@@ -539,9 +541,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                             fit: BoxFit.cover,
                                           )
-                                          : const DecorationImage(
+                                          : DecorationImage(
+                                            // Jika _profilePhotoUrl kosong, gunakan gambar default
                                             image: NetworkImage(
-                                              'https://placehold.co/50x50/ffffff/000000?text=P', // Placeholder if no image
+                                              // Logika jenis kelamin di sini
+                                              // Asumsi: 'currentUser' adalah objek User yang tersedia di scope ini
+                                              // dan memiliki properti 'jenis_kelamin'
+                                              // Jika currentUser bisa null, tambahkan null-check.
+                                              (_currentUser?.jenis_kelamin ==
+                                                      'P')
+                                                  ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTePvPIcfgyTA_2uby6QSsAG7PDe0Ai1Pv9x6cpYZYRGyxKSufwKmkibEpGZDw1fw5JUSs&usqp=CAU' // URL untuk perempuan
+                                                  : 'https://avatar.iran.liara.run/public/boy?username=Ash', // URL untuk laki-laki atau default
                                             ),
                                             fit: BoxFit.cover,
                                           ),
@@ -1006,11 +1016,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            const Icon(
-                              Icons.close,
-                              color: Colors.grey,
-                              size: 20,
-                            ), // Ikon 'X'
+                            // const Icon(
+                            //   Icons.close,
+                            //   color: Colors.grey,
+                            //   size: 20,
+                            // ), // Ikon 'X'
                           ],
                         ),
                         const SizedBox(height: 8),

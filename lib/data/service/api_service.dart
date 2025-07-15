@@ -357,11 +357,30 @@ class ApiService {
     }
   }
 
-  Future<ApiResponse<AbsenceStats>> getAbsenceStats() async {
-    final url = Uri.parse('$_baseUrl/absen/stats');
+  Future<ApiResponse<AbsenceStats>> getAbsenceStats({
+    String? startDate,
+    String? endDate,
+  }) async {
+    final Map<String, String> queryParams = {};
+    if (startDate != null) {
+      queryParams['start'] = startDate;
+    }
+    if (endDate != null) {
+      queryParams['end'] = endDate;
+    }
+
+    // --- PERBAIKAN DI SINI ---
+    // Gunakan Uri.parse().replace() untuk menambahkan query parameters
+    Uri uri = Uri.parse(
+      '$_baseUrl/absen/stats',
+    ).replace(queryParameters: queryParams);
+    print(
+      'Requesting URL for stats: $uri',
+    ); // Tambahkan print untuk verifikasi URL final
+
     try {
       final response = await http.get(
-        url,
+        uri, // GUNAKAN URI YANG SUDAH DENGAN PARAMETERS
         headers: _getHeaders(includeAuth: true),
       );
 

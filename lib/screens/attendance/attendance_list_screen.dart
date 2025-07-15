@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
-import 'package:absensi/screens/main_bottom_navigation_bar.dart';
+import 'package:absensi/widgets/custom_card_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -141,348 +141,22 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     }
   }
 
-  String _calculateWorkingHours(DateTime? checkIn, DateTime? checkOut) {
-    if (checkIn == null) {
-      return '00:00:00';
+  String _calculateWorkingHoursForHistory(Absence absence) {
+    if (absence.checkIn == null || absence.checkOut == null) {
+      return '00:00:00'; // Jika belum check-out atau data tidak lengkap
     }
 
-    DateTime endDateTime =
-        checkOut ?? DateTime.now(); // Use current time if no checkout
+    try {
+      final Duration duration = absence.checkOut!.difference(absence.checkIn!);
+      final int hours = duration.inHours;
+      final int minutes = duration.inMinutes.remainder(60);
+      final int seconds = duration.inSeconds.remainder(60);
 
-    final Duration duration = endDateTime.difference(checkIn);
-    final int hours = duration.inHours;
-    final int minutes = duration.inMinutes.remainder(60);
-    final int seconds = duration.inSeconds.remainder(60);
-
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildAttendanceTile(Absence absence) {
-    Color leftColumnBackgroundColor;
-    Color statusTextColor; // For "IZIN" or time text
-    Color cardBackgroundColor = AppColors.background;
-
-    // Determine colors based on status
-    bool isRequestType = absence.status?.toLowerCase() == 'izin';
-
-    if (isRequestType) {
-      leftColumnBackgroundColor = AppColors.accentOrange;
-      statusTextColor = AppColors.accentOrange;
-      cardBackgroundColor = AppColors.lightOrangeBackground;
-    } else {
-      leftColumnBackgroundColor = AppColors.accentGreen;
-      statusTextColor = AppColors.accentGreen;
-      cardBackgroundColor =
-          AppColors.background; // White background for regular cards
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } catch (e) {
+      debugPrint('Error calculating working hours for history: $e');
+      return 'N/A';
     }
-
-    final DateTime? displayDate = absence.attendanceDate;
-    final String dayNumber =
-        displayDate != null ? DateFormat('dd').format(displayDate) : '--';
-    final String dayOfWeek =
-        displayDate != null ? DateFormat('EEE').format(displayDate) : '---';
-    final String locationText = absence.checkInAddress ?? 'Unknown Location';
-
-    return Card(
-      color: cardBackgroundColor,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.center, // Align content vertically in the middle
-        children: [
-          // Left side: Date (Day number and Day of Week)
-          Container(
-            width: 80, // Fixed width for the date column
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            decoration: BoxDecoration(
-              color: leftColumnBackgroundColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
-                bottomLeft: Radius.circular(10),
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  dayNumber,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  dayOfWeek,
-                  style: const TextStyle(fontSize: 14, color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-          // Right side: Attendance details
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!isRequestType)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Check In',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    absence.checkIn != null
-                                        ? DateFormat(
-                                          'HH:mm',
-                                        ).format(absence.checkIn!)
-                                        : '--:--',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: statusTextColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Check Out',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    absence.checkOut != null
-                                        ? DateFormat(
-                                          'HH:mm',
-                                        ).format(absence.checkOut!)
-                                        : '--:--',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: statusTextColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Total Hours',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    _calculateWorkingHours(
-                                      absence.checkIn,
-                                      absence.checkOut,
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: statusTextColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Location
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Text(
-                                locationText,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    )
-                  else // For 'izin' type
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 18,
-                              color: statusTextColor,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              'IZIN',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: statusTextColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          absence.alasanIzin?.isNotEmpty == true
-                              ? absence.alasanIzin!
-                              : 'Tidak ada alasan',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 14,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_today,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              displayDate != null
-                                  ? DateFormat(
-                                    'dd MMMM yyyy',
-                                  ).format(displayDate)
-                                  : 'N/A',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-          ),
-          // Delete button
-          Align(
-            alignment: Alignment.topRight,
-            child: IconButton(
-              icon: Icon(Icons.close, color: Colors.grey.withOpacity(0.7)),
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder:
-                      (context) => AlertDialog(
-                        backgroundColor: AppColors.background,
-                        title: const Text('Cancel Entry'),
-                        content: const Text(
-                          'Are you sure you want to cancel this entry?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text(
-                              'No',
-                              style: TextStyle(color: AppColors.primary),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text(
-                              'Yes',
-                              style: TextStyle(color: AppColors.error),
-                            ),
-                          ),
-                        ],
-                      ),
-                );
-
-                if (confirmed == true) {
-                  try {
-                    final ApiResponse<Absence> deleteResponse =
-                        await _apiService.deleteAbsence(absence.id);
-
-                    if (deleteResponse.statusCode == 200) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(deleteResponse.message)),
-                      );
-                      await _refreshList();
-                      MainBottomNavigationBar.refreshHomeNotifier.value = true;
-                    } else {
-                      String errorMessage = deleteResponse.message;
-                      if (deleteResponse.errors != null) {
-                        deleteResponse.errors!.forEach((key, value) {
-                          errorMessage +=
-                              '\n$key: ${(value as List).join(', ')}';
-                        });
-                      }
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Failed to cancel entry: $errorMessage',
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'An error occurred during cancellation: $e',
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildTimeColumn(String time, String label, Color color) {
@@ -867,10 +541,20 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
                     itemCount: filteredAttendances.length,
                     itemBuilder: (context, index) {
-                      return _buildAttendanceTile(filteredAttendances[index]);
+                      final absence = filteredAttendances[index];
+                      return CustomCardHistory(
+                        absence: absence,
+                        onDismissed: () {
+                          // Logika untuk menghapus item dari filteredAttendances
+                          // dan memperbarui UI (misalnya dengan setState)
+                          setState(() {
+                            filteredAttendances.removeAt(index);
+                          });
+                        },
+                      );
                     },
                   );
                 },

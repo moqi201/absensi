@@ -406,11 +406,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 32),
 
                     _isLoading
-                        ? const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
-                        )
+                        ? const Center()
                         : PrimaryButton(
                           label: "Register",
                           onPressed: _register,

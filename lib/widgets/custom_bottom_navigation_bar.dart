@@ -62,19 +62,19 @@ class CustomBottomNavigationBar extends StatelessWidget {
               _buildNavItem(
                 1,
                 Icons.calendar_today,
-                '',
+                'History',
               ), // Tidak ada label untuk item ini
               // Item Report (Index 2) - Menggunakan Icons.bar_chart
               _buildNavItem(
                 2,
                 Icons.bar_chart, // Ikon untuk Report
-                '',
+                'Stats',
               ), // Tidak ada label untuk item ini
               // Item Profile (Index 3) - Menggunakan Icons.person
               _buildNavItem(
                 3,
                 Icons.person,
-                '',
+                'Profile',
               ), // Tidak ada label untuk item ini
             ],
           ),
@@ -122,12 +122,12 @@ class CustomBottomNavigationBar extends StatelessWidget {
                 // Hanya tampilkan label jika item dipilih DAN label tidak kosong
                 if (isSelected && label.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
+                    padding: const EdgeInsets.only(left: 8.0, top: 5),
                     child: Text(
                       label,
                       style: const TextStyle(
                         color: Colors.white, // Warna teks putih saat dipilih
-                        fontSize: 16,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow:

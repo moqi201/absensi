@@ -20,7 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _currentUser; // Holds the full user data (from API)
   bool _isLoading = false; // Add loading state
 
-  bool _notificationEnabled = true; // State for the notification switch
+  final bool _notificationEnabled = true; // State for the notification switch
 
   @override
   void initState() {
@@ -141,6 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white, // Set background to white
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'My Profile',
           style: TextStyle(
@@ -207,45 +208,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 20), // Space between cards
                     // Notification Toggle Card (from image_c9db7c.png)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Card(
-                        color: Colors.white,
-                        margin: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ), // Slightly less rounded than original
-                        elevation: 1, // Subtle elevation
-                        child: ListTile(
-                          leading: const Icon(
-                            Icons.notifications,
-                            color: AppColors.primary,
-                          ),
-                          title: const Text(
-                            'Notification',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          trailing: Switch.adaptive(
-                            value: _notificationEnabled,
-                            onChanged: (bool newValue) {
-                              setState(() {
-                                _notificationEnabled = newValue;
-                              });
-                              // Add logic to save notification preference (e.g., to UserModel or SessionManager)
-                            },
-                            activeColor: AppColors.primary,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _notificationEnabled = !_notificationEnabled;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    //   child: Card(
+                    //     color: Colors.white,
+                    //     margin: EdgeInsets.zero,
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(10),
+                    //     ), // Slightly less rounded than original
+                    //     elevation: 1, // Subtle elevation
+                    //     child: ListTile(
+                    //       leading: const Icon(
+                    //         Icons.notifications,
+                    //         color: AppColors.primary,
+                    //       ),
+                    //       title: const Text(
+                    //         'Notification',
+                    //         style: TextStyle(
+                    //           fontSize: 16,
+                    //           color: AppColors.textDark,
+                    //         ),
+                    //       ),
+                    //       trailing: Switch.adaptive(
+                    //         value: _notificationEnabled,
+                    //         onChanged: (bool newValue) {
+                    //           setState(() {
+                    //             _notificationEnabled = newValue;
+                    //           });
+                    //           // Add logic to save notification preference (e.g., to UserModel or SessionManager)
+                    //         },
+                    //         activeColor: AppColors.primary,
+                    //       ),
+                    //       onTap: () {
+                    //         setState(() {
+                    //           _notificationEnabled = !_notificationEnabled;
+                    //         });
+                    //       },
+                    //     ),
+                    //   ),
+                    // ),
                     const SizedBox(
                       height: 10,
                     ), // Small space between these cards
@@ -331,6 +332,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? profilePhotoPath
               : 'https://appabsensi.mobileprojp.com/public/$profilePhotoPath';
       imageProvider = NetworkImage(fullImageUrl);
+    } else {
+      // BAGIAN INI YANG AKAN MENERAPKAN LOGIKA JENIS KELAMIN
+      // Saat profilePhotoPath KOSONG, gunakan default berdasarkan jenis kelamin
+      if (_currentUser == 'P') {
+        // Asumsi 'P' untuk Perempuan
+        imageProvider = NetworkImage(
+          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTePvPIcfgyTA_2uby6QSsAG7PDe0Ai1Pv9x6cpYZYRGyxKSufwKmkibEpGZDw1fw5JUSs&usqp=CAU',
+        );
+      } else {
+        imageProvider = NetworkImage(
+          'https://avatar.iran.liara.run/public/boy?username=Ash',
+        ); // Untuk Laki-laki atau default
+      }
     }
 
     return Stack(

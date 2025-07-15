@@ -28,13 +28,12 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   int _presentCount = 0;
   int _absentCount = 0;
   int _lateInCount = 0;
-  int _calculatedTotalBasisForAttendanceTimeOff =
-      0; // Basis baru untuk Attendance dan Time Off
+  int _calculatedTotalBasisForAttendanceTimeOff = 0;
   String _totalWorkingHours = '0hr 0min';
 
   double _attendanceProgress = 0.0;
   double _timeOffProgress = 0.0;
-  double _totalAbsenceLateProgress = 0.0; // Progres untuk total absen/terlambat
+  double _totalAbsenceLateProgress = 0.0;
 
   @override
   void initState() {
@@ -63,8 +62,39 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
 
   Future<void> _fetchAndCalculateMonthlyReports() async {
     try {
-      final ApiResponse<AbsenceStats> statsResponse =
-          await _apiService.getAbsenceStats();
+      // 1. Hitung startDate dan endDate berdasarkan _selectedMonth
+      final DateTime firstDayOfMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month,
+        1,
+      );
+      // Tanggal 0 dari bulan berikutnya adalah hari terakhir bulan ini
+      final DateTime lastDayOfMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + 1,
+        0,
+      );
+
+      final String startDateFormatted = DateFormat(
+        'yyyy-MM-dd',
+      ).format(firstDayOfMonth);
+      final String endDateFormatted = DateFormat(
+        'yyyy-MM-dd',
+      ).format(lastDayOfMonth);
+
+      // --- DEBUGGING PRINTS ---
+      print('Fetching reports for:');
+      print('  Start Date: $startDateFormatted');
+      print('  End Date: $endDateFormatted');
+      // --- END DEBUGGING PRINTS ---
+
+      // 2. Panggil getAbsenceStats dengan startDate dan endDate
+      final ApiResponse<AbsenceStats> statsResponse = await _apiService
+          .getAbsenceStats(
+            startDate: startDateFormatted,
+            endDate: endDateFormatted,
+          );
+
       if (statsResponse.statusCode == 200 && statsResponse.data != null) {
         final AbsenceStats stats = statsResponse.data!;
         setState(() {
@@ -72,12 +102,9 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           _absentCount = stats.totalIzin;
           _lateInCount = stats.totalAbsen;
 
-          // Hitung basis untuk Attendance dan Time Off: hanya Hadir + Izin
           _calculatedTotalBasisForAttendanceTimeOff =
               _presentCount + _absentCount;
 
-          // Perhitungan Progres untuk Attendance dan Time Off:
-          // Dibagi hanya dari total hari Hadir dan Izin
           _attendanceProgress =
               _calculatedTotalBasisForAttendanceTimeOff > 0
                   ? _presentCount / _calculatedTotalBasisForAttendanceTimeOff
@@ -87,11 +114,15 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   ? _absentCount / _calculatedTotalBasisForAttendanceTimeOff
                   : 0.0;
 
-          // Progress Bar "Absences/Late": selalu 100% jika ada absen, 0% jika tidak ada
           _totalAbsenceLateProgress = _lateInCount > 0 ? 1.0 : 0.0;
         });
+        print(
+          'Absence Stats loaded successfully: Total Masuk: $_presentCount, Total Izin: $_absentCount, Total Absen: $_lateInCount',
+        );
       } else {
-        print('Failed to get absence stats: ${statsResponse.message}');
+        print(
+          'Failed to get absence stats: ${statsResponse.message}. Status Code: ${statsResponse.statusCode}',
+        );
         _updateSummaryCounts(0, 0, 0, '0hr 0min');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -102,20 +133,19 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         }
       }
 
-      // Bagian perhitungan Total Working Hours (tidak berubah)
-      final lastDayOfMonth = DateTime(
-        _selectedMonth.year,
-        _selectedMonth.month + 1,
-        0,
-      );
-      final String startDate = DateFormat('yyyy-MM-01').format(_selectedMonth);
-      final String endDate = DateFormat('yyyy-MM-dd').format(lastDayOfMonth);
-
+      // 3. Panggil getAbsenceHistory dengan startDate dan endDate
+      // Variabel startDate dan endDate sudah dihitung di atas
       final ApiResponse<List<Absence>> historyResponse = await _apiService
-          .getAbsenceHistory(startDate: startDate, endDate: endDate);
+          .getAbsenceHistory(
+            startDate: startDateFormatted,
+            endDate: endDateFormatted,
+          );
 
       Duration totalWorkingDuration = Duration.zero;
       if (historyResponse.statusCode == 200 && historyResponse.data != null) {
+        print(
+          'Absence History loaded successfully. Items: ${historyResponse.data!.length}',
+        );
         for (var absence in historyResponse.data!) {
           if (absence.status?.toLowerCase() == 'masuk' &&
               absence.checkIn != null &&
@@ -126,6 +156,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
 
               Duration dailyDuration;
               if (checkOut.isBefore(checkIn)) {
+                // Handle cases where checkout crosses midnight
                 dailyDuration = checkOut
                     .add(const Duration(days: 1))
                     .difference(checkIn);
@@ -140,7 +171,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         }
       } else {
         print(
-          'Failed to get absence history for working hours: ${historyResponse.message}',
+          'Failed to get absence history for working hours: ${historyResponse.message}. Status Code: ${historyResponse.statusCode}',
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -161,6 +192,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       setState(() {
         _totalWorkingHours = formattedTotalWorkingHours;
       });
+      print('Total Working Hours calculated: $_totalWorkingHours');
     } catch (e) {
       print('Error fetching and calculating monthly reports: $e');
       _updateSummaryCounts(0, 0, 0, '0hr 0min');
@@ -172,7 +204,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     }
   }
 
-  // Parameter _actualTotalDays dihapus karena tidak lagi menjadi basis umum
   void _updateSummaryCounts(
     int present,
     int absent,
@@ -185,7 +216,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       _lateInCount = late;
       _totalWorkingHours = totalHrs;
 
-      // Hitung basis untuk Attendance dan Time Off: hanya Hadir + Izin
       _calculatedTotalBasisForAttendanceTimeOff = _presentCount + _absentCount;
 
       _attendanceProgress =
@@ -197,20 +227,28 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
               ? _absentCount / _calculatedTotalBasisForAttendanceTimeOff
               : 0.0;
 
-      // Progress Bar "Absences/Late": selalu 100% jika ada absen, 0% jika tidak ada
       _totalAbsenceLateProgress = _lateInCount > 0 ? 1.0 : 0.0;
     });
   }
 
-  // --- UI building methods (unchanged, kecuali bagian penjelasan) ---
-
   Future<void> _selectMonth(BuildContext context) async {
+    // Current date for initial selection in the picker
+    DateTime initialPickerDate = _selectedMonth;
+
+    // To prevent selecting days beyond current date in month picker (optional, but good UX)
+    // If you want to allow selecting future months, remove this line or adjust
+    // DateTime lastSelectableDate = DateTime.now();
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedMonth,
+      initialDate: initialPickerDate,
       firstDate: DateTime(2000, 1, 1),
-      lastDate: DateTime(2101, 12, 31),
-      initialDatePickerMode: DatePickerMode.year,
+      lastDate: DateTime(
+        2101,
+        12,
+        31,
+      ), // Or limit to lastSelectableDate if you uncomment above
+      initialDatePickerMode: DatePickerMode.year, // Memulai di tampilan tahun
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
@@ -229,13 +267,21 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     );
 
     if (picked != null) {
+      // Kita hanya peduli bulan dan tahun dari tanggal yang dipilih.
+      // Set tanggal ke hari pertama bulan tersebut.
       final DateTime newSelectedMonth = DateTime(picked.year, picked.month, 1);
+
+      // Hanya update jika bulan/tahun berbeda untuk menghindari reload tidak perlu
       if (newSelectedMonth.year != _selectedMonth.year ||
           newSelectedMonth.month != _selectedMonth.month) {
         setState(() {
           _selectedMonth = newSelectedMonth;
-          _reportDataFuture = _fetchAndCalculateMonthlyReports();
+          _reportDataFuture =
+              _fetchAndCalculateMonthlyReports(); // Trigger reload data
         });
+        print(
+          'Selected new month: ${DateFormat('MMMM yyyy').format(_selectedMonth)}',
+        );
       }
     }
   }
@@ -327,6 +373,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         centerTitle: true,
         title: const Text(
           'Analytics',
@@ -378,6 +425,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                           child: Row(
                             children: [
                               Text(
+                                // Menampilkan bulan dan tahun yang dipilih
                                 DateFormat(
                                   'MMMM yyyy',
                                 ).format(_selectedMonth).toUpperCase(),
@@ -465,7 +513,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                         progress: _timeOffProgress,
                         color: AppColors.accentOrange,
                       ),
-                      // Progress bar untuk Absences/Late
                       _buildProgressBar(
                         label: 'total absence',
                         progress: _totalAbsenceLateProgress,
@@ -502,6 +549,10 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                             children: [
                               Column(
                                 children: [
+                                  // Ini akan menampilkan hari dan tanggal saat ini, bukan yang difilter.
+                                  // Jika ingin menampilkan hari dan tanggal DARI bulan yang dipilih,
+                                  // misalnya hari pertama bulan yang dipilih, Anda bisa ganti DateTime.now()
+                                  // dengan _selectedMonth atau DateTime(_selectedMonth.year, _selectedMonth.month, 1)
                                   Text(
                                     DateFormat('EEE').format(DateTime.now()),
                                     style: const TextStyle(

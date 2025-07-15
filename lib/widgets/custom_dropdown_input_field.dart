@@ -8,8 +8,8 @@ class CustomDropdownInputField<T> extends StatelessWidget {
   final T? value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?>? onChanged;
-  final double? menuMaxHeight; // NEW: Added menuMaxHeight
-  final String? Function(T?)? validator; // NEW: Added validator
+  final double? menuMaxHeight;
+  final String? Function(T?)? validator;
 
   const CustomDropdownInputField({
     super.key,
@@ -19,8 +19,8 @@ class CustomDropdownInputField<T> extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
-    this.menuMaxHeight, // Initialize new parameter
-    this.validator, // Initialize new parameter
+    this.menuMaxHeight,
+    this.validator,
   });
 
   @override
@@ -29,47 +29,76 @@ class CustomDropdownInputField<T> extends StatelessWidget {
       value: value,
       hint: Text(
         hintText ?? 'Select ${labelText.toLowerCase()}',
-        style: const TextStyle(color: AppColors.placeholder),
+        style: const TextStyle(
+          color: AppColors.placeholder,
+        ), // Warna placeholder
       ),
       items: items,
       onChanged: onChanged,
       style: const TextStyle(
         fontSize: 16,
-        color: AppColors.textDark,
-      ), // Consistent text style
+        color: AppColors.textDark, // Warna teks input saat dipilih
+      ),
       decoration: InputDecoration(
+        // labelText akan muncul di atas hintText saat input tidak fokus
         labelText: labelText,
         labelStyle: const TextStyle(
-          color: AppColors.textLight,
-        ), // Consistent label style
+          color: AppColors.textLight, // Warna label saat tidak fokus
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: AppColors.primary, // Warna label saat fokus
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             16,
-          ), // Match CustomInputField's border radius
-          borderSide: const BorderSide(color: AppColors.border),
+          ), // Radius sudut yang konsisten
+          borderSide: const BorderSide(
+            color: AppColors.border,
+          ), // Warna border default
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(
+            color: AppColors.border,
+          ), // Warna border saat enabled
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(
+            color: AppColors.primary,
+            width: 2.0,
+          ), // Warna border saat fokus, sedikit lebih tebal
+        ),
+        errorBorder: OutlineInputBorder(
+          // Gaya border untuk error
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.error, width: 2.0),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          // Gaya border untuk error saat fokus
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.error, width: 2.0),
         ),
         filled: true,
-        fillColor: AppColors.inputFill, // Consistent fill color
+        fillColor: AppColors.inputFill, // Warna latar belakang input
         prefixIcon: Icon(
           icon,
-          color: AppColors.primary,
-        ), // Consistent icon styling
+          color: AppColors.primary, // Warna ikon prefix
+        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
-        ), // Consistent padding
+        ), // Padding internal input
       ),
-      menuMaxHeight: menuMaxHeight, // Apply menuMaxHeight here
-      validator: validator, // Apply validator here
-      isExpanded: true, // Keep this to prevent overflow
+      menuMaxHeight: menuMaxHeight,
+      validator: validator,
+      isExpanded: true,
+      icon: const Icon(
+        // Mengatur ikon dropdown
+        Icons.keyboard_arrow_down,
+        color: AppColors.textLight, // Warna ikon panah dropdown
+      ),
+      dropdownColor: AppColors.background, // Warna latar belakang dropdown menu
     );
   }
 }
