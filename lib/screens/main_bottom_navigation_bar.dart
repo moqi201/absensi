@@ -15,9 +15,9 @@ class MainBottomNavigationBar extends StatefulWidget {
   );
   static final ValueNotifier<bool> refreshAttendanceNotifier =
       ValueNotifier<bool>(false); // Akan digunakan untuk item "Documents"
-  static final ValueNotifier<bool> refreshReportsNotifier = ValueNotifier<bool>(
-    false,
-  ); // Akan digunakan untuk item "Tools/Utilities"
+  // static final ValueNotifier<bool> refreshReportsNotifier = ValueNotifier<bool>(
+  //   false,
+  // ); // Akan digunakan untuk item "Tools/Utilities"
   static final ValueNotifier<bool> refreshSettingsNotifier =
       ValueNotifier<bool>(false); // Akan digunakan untuk item "Notifications"
 
@@ -47,9 +47,9 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
       AttendanceListScreen(
         refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
       ),
-      PersonReportScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
-      ),
+      // PersonReportScreen(
+      //   refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
+      // ),
 
       // Index 2: Notifications (ProfileScreen)
       ProfileScreen(
@@ -79,9 +79,6 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
       // Documents (sekarang di indeks 1)
       MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
     } else if (index == 2) {
-      // Notifications (sekarang di indeks 2)
-      MainBottomNavigationBar.refreshReportsNotifier.value = true;
-    } else if (index == 3) {
       // Notifications (sekarang di indeks 2)
       MainBottomNavigationBar.refreshSettingsNotifier.value = true;
     }

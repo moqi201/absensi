@@ -68,7 +68,10 @@ class _CustomCardHistoryState extends State<CustomCardHistory> {
     // Tentukan hari dalam seminggu
     String dayOfWeek = '';
     if (widget.absence.attendanceDate != null) {
-      dayOfWeek = DateFormat('EEE').format(widget.absence.attendanceDate!);
+      dayOfWeek = DateFormat(
+        'EEE',
+        'id_ID',
+      ).format(widget.absence.attendanceDate!);
     }
 
     return Card(
@@ -95,6 +98,7 @@ class _CustomCardHistoryState extends State<CustomCardHistory> {
                 Text(
                   DateFormat(
                     'dd',
+                    'id_ID',
                   ).format(widget.absence.attendanceDate!), // Tanggal
                   style: TextStyle(
                     fontSize: 28,
@@ -105,6 +109,7 @@ class _CustomCardHistoryState extends State<CustomCardHistory> {
                 Text(
                   DateFormat(
                     'MMMM',
+                    'id_ID',
                   ).format(widget.absence.attendanceDate!), // Bulan
                   style: TextStyle(
                     fontSize: 14,
@@ -184,6 +189,7 @@ class _CustomCardHistoryState extends State<CustomCardHistory> {
                             Text(
                               DateFormat(
                                 'dd MMMM yyyy',
+                                'id_ID',
                               ).format(widget.absence.attendanceDate!),
                               style: const TextStyle(
                                 fontSize: 12,

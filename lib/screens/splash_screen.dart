@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
-                'assets/images/logomerah.png',
+                'assets/images/logobiru.png',
                 width: 200,
                 height: 200,
               ),

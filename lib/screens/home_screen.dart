@@ -1,4 +1,3 @@
-// lib/screens/home/home_screen.dart (path mungkin perlu disesuaikan)
 import 'dart:async';
 
 import 'package:absensi/constants/app_colors.dart';
@@ -37,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isCheckingInOrOut =
       false; // Untuk mencegah multiple taps saat panggilan API
 
-  // State untuk riwayat absensi
+  // State untuk riwayat absen_1
   List<Absence> _attendanceHistory = [];
 
   @override
@@ -46,8 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _updateDateTime();
     _determinePosition(); // Mulai pengambilan lokasi
     _loadUserData();
-    _fetchAttendanceData(); // Ambil data absensi awal
-    _fetchAttendanceHistory(); // Ambil data riwayat absensi
+    _fetchAttendanceData(); // Ambil data absen_1 awal
+    _fetchAttendanceHistory(); // Ambil data riwayat absen_1
 
     widget.refreshNotifier.addListener(_handleRefreshSignal);
 
@@ -94,9 +93,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final now = DateTime.now();
     setState(() {
       // Format tanggal sesuai gambar: "Oct 26, 2022 - Wednesday"
-      _currentDate = DateFormat('MMM dd, yyyy - EEEE').format(now);
+      _currentDate = DateFormat('MMM dd, yyyy - EEEE', 'id_ID').format(now);
       // Format waktu sesuai gambar: "09:00 AM"
-      _currentTime = DateFormat('hh:mm a').format(now);
+      _currentTime = DateFormat('hh:mm ').format(now);
     });
   }
 
@@ -104,13 +103,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) {
-      return 'Good Morning';
+      return 'Selamat Pagi';
     } else if (hour >= 12 && hour < 17) {
-      return 'Good Afternoon';
+      return 'Selamat Siang';
     } else if (hour >= 17 && hour < 20) {
-      return 'Good Evening';
+      return 'Selamat Sore';
     } else {
-      return 'Good Night';
+      return 'Selamat Malam';
     }
   }
 
@@ -202,7 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Menggunakan format yang lebih ringkas seperti di gambar: Sub-lokasi, Kota, Negara
       Placemark place = placemarks[0];
       setState(() {
-        _location = "${place.subLocality}, ${place.locality}, ${place.country}";
+        _location =
+            "${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}";
       });
     } catch (e) {
       debugPrint('Error getting address from coordinates: $e');
@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchAttendanceData() async {
-    // Ambil catatan absensi hari ini
+    // Ambil catatan absen_1 hari ini
     final ApiResponse<AbsenceToday> todayAbsenceResponse =
         await _apiService.getAbsenceToday();
     if (todayAbsenceResponse.statusCode == 200 &&
@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
-    // Ambil statistik absensi
+    // Ambil statistik absen_1
     final ApiResponse<AbsenceStats> statsResponse =
         await _apiService.getAbsenceStats();
     if (statsResponse.statusCode == 200 && statsResponse.data != null) {
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Method baru untuk mengambil riwayat absensi
+  // Method baru untuk mengambil riwayat absen_1
   Future<void> _fetchAttendanceHistory() async {
     final ApiResponse<List<Absence>> historyResponse =
         await _apiService.getAbsenceHistory();
@@ -280,10 +280,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
+        'id_ID',
       ).format(DateTime.now());
       // Format waktu saat ini ke string 'HH:mm' untuk API
       final String formattedCheckInTime = DateFormat(
         'HH:mm',
+        'id_ID',
       ).format(DateTime.now());
 
       final ApiResponse<Absence> response = await _apiService.checkIn(
@@ -439,18 +441,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Tentukan status tombol utama
     String mainButtonText = '';
-    IconData mainButtonIcon = Icons.fingerprint; // Ikon default
+    IconData mainButtonIcon = Icons.touch_app_outlined; // Ikon default
     Color mainButtonColor = AppColors.primary;
     VoidCallback? mainButtonOnTap;
 
     if (!hasCheckedIn) {
       mainButtonText = 'Check In';
-      mainButtonIcon = Icons.fingerprint;
+      mainButtonIcon = Icons.touch_app_outlined;
       mainButtonColor = AppColors.primary;
       mainButtonOnTap = _handleCheckIn;
     } else if (hasCheckedIn && !hasCheckedOut) {
       mainButtonText = 'Check Out';
-      mainButtonIcon = Icons.fingerprint;
+      mainButtonIcon = Icons.touch_app_outlined;
       mainButtonColor = AppColors.primary;
       mainButtonOnTap = _handleCheckOut;
     } else {
@@ -501,27 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${_getGreeting()},', // Updated: Dynamic greeting
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    _userName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Updated: Display actual profile image
+                              // **FOTO PROFIL DIPINDAH KE SINI**
                               Container(
                                 width: 50,
                                 height: 50,
@@ -544,10 +526,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                           : DecorationImage(
                                             // Jika _profilePhotoUrl kosong, gunakan gambar default
                                             image: NetworkImage(
-                                              // Logika jenis kelamin di sini
-                                              // Asumsi: 'currentUser' adalah objek User yang tersedia di scope ini
-                                              // dan memiliki properti 'jenis_kelamin'
-                                              // Jika currentUser bisa null, tambahkan null-check.
                                               (_currentUser?.jenis_kelamin ==
                                                       'P')
                                                   ? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTePvPIcfgyTA_2uby6QSsAG7PDe0Ai1Pv9x6cpYZYRGyxKSufwKmkibEpGZDw1fw5JUSs&usqp=CAU' // URL untuk perempuan
@@ -555,6 +533,39 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                             fit: BoxFit.cover,
                                           ),
+                                ),
+                              ),
+                              // **TAMBAHKAN SPASI DI SINI UNTUK MEMISAHKAN FOTO DAN NAMA**
+                              const SizedBox(
+                                width: 10,
+                              ), // Memberi sedikit jarak antara foto dan teks
+                              // **KOLOM UNTUK SAPAAN DAN NAMA (DIJADIKAN Expanded agar mengisi sisa ruang)**
+                              Expanded(
+                                // Gunakan Expanded agar teks tidak terpotong dan mengisi ruang yang tersedia
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${_getGreeting()},', // Updated: Dynamic greeting
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      _userName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines:
+                                          1, // Pastikan nama tidak terlalu panjang
+                                      overflow:
+                                          TextOverflow
+                                              .ellipsis, // Tambahkan ellipsis jika terlalu panjang
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -586,11 +597,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 size: 16,
                               ),
                               const SizedBox(width: 5),
-                              Text(
-                                _location, // Lokasi saat ini
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                              SizedBox(
+                                width:
+                                    200, // Example fixed width, adjust as needed
+                                child: Text(
+                                  _location, // Lokasi saat ini
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                  // You might still want maxLines and overflow here
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -659,7 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 30),
 
-                    // Tiga kartu statistik absensi kecil (Check In, Check Out, Total Hrs)
+                    // Tiga kartu statistik absen_1 kecil (Check In, Check Out, Total Hrs)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -695,18 +713,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     const SizedBox(height: 20),
-                    // Header Riwayat Absensi
+                    // Header Riwayat absen_1
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Attendance History',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
-                        ),
+                        // const Text(
+                        //   'Histori absen ',
+                        //   style: TextStyle(
+                        //     fontSize: 18,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: AppColors.textDark,
+                        //   ),
+                        // ),
                         // TextButton(
                         //   onPressed: () {
                         //     // Ini akan memicu refresh di AttendanceListScreen melalui Bottom Nav Bar
@@ -722,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    // Daftar Riwayat Absensi
+                    // Daftar Riwayat absen_1
                     if (_attendanceHistory.isEmpty)
                       const Center(
                         child: Padding(
@@ -731,7 +749,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     else
-                      // Tampilkan 5 item terbaru dari riwayat absensi
+                      // Tampilkan 5 item terbaru dari riwayat absen_1
                       ..._attendanceHistory.take(5).map((absence) {
                         return _buildAttendanceHistoryItem(absence);
                       }),
@@ -748,7 +766,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget baru untuk kartu statistik absensi kecil (Check In, Check Out, Total Hrs)
+  // Widget baru untuk kartu statistik absen_1 kecil (Check In, Check Out, Total Hrs)
   Widget _buildAttendanceStatCard({
     required String title,
     required String value,
@@ -792,10 +810,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget untuk menampilkan item riwayat absensi
+  // Widget untuk menampilkan item riwayat absen_1
   Widget _buildAttendanceHistoryItem(Absence absence) {
-    // Warna dan ikon default untuk entri absensi biasa
-    Color cardColor = AppColors.primary; // Warna utama untuk kartu absensi
+    // Warna dan ikon default untuk entri absen_1 biasa
+    Color cardColor = AppColors.primary; // Warna utama untuk kartu absen_1
     Color textColor = Colors.white; // Teks putih di latar belakang berwarna
     IconData statusIcon = Icons.check_circle_outline; // Ikon default
 
@@ -819,12 +837,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if (absence.attendanceDate != null) {
       dayOfWeek = DateFormat(
         'EEE',
+        'id_ID',
       ).format(absence.attendanceDate!); // e.g., 'Sen'
     }
 
     return Card(
       color: AppColors.background, // Latar belakang kartu putih
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.all(8.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 2,
       child: Row(
@@ -844,7 +863,10 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  DateFormat('dd').format(absence.attendanceDate!), // Tanggal
+                  DateFormat(
+                    'dd',
+                    'id_ID',
+                  ).format(absence.attendanceDate!), // Tanggal
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -852,7 +874,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Text(
-                  DateFormat('MMM').format(absence.attendanceDate!), // Bulan
+                  DateFormat(
+                    'MMM',
+                    'id_ID',
+                  ).format(absence.attendanceDate!), // Bulan
                   style: TextStyle(
                     fontSize: 14,
                     color: textColor, // Menggunakan warna dinamis
@@ -870,7 +895,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(17.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -930,6 +955,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               DateFormat(
                                 'dd MMMM yyyy',
+                                'id_ID',
                               ).format(absence.attendanceDate!),
                               style: const TextStyle(
                                 fontSize: 12,

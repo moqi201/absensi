@@ -1,4 +1,3 @@
-// lib/screens/profile/profile_screen.dart
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
@@ -74,6 +73,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
   }
+
+  // --- START MODIFICATION ---
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        // Use dialogContext to avoid conflicts
+        return AlertDialog(
+          title: const Text('Konfirmasi Logout'),
+          content: const Text('Apakah Anda yakin ingin keluar?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Tutup dialog
+              },
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Tutup dialog
+                _logout(context); // Lanjutkan proses logout
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  // --- END MODIFICATION ---
 
   void _logout(BuildContext context) async {
     await ApiService.clearToken(); // Clear token using ApiService static method
@@ -311,7 +340,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             size: 18,
                             color: AppColors.textLight,
                           ),
-                          onTap: () => _logout(context),
+                          // --- START MODIFICATION ---
+                          onTap:
+                              () => _confirmLogout(
+                                context,
+                              ), // Panggil fungsi konfirmasi logout
+                          // --- END MODIFICATION ---
                         ),
                       ),
                     ),
@@ -335,13 +369,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       // BAGIAN INI YANG AKAN MENERAPKAN LOGIKA JENIS KELAMIN
       // Saat profilePhotoPath KOSONG, gunakan default berdasarkan jenis kelamin
-      if (_currentUser == 'P') {
+      if (_currentUser?.jenis_kelamin == 'P') {
+        // Perbaikan: Gunakan _currentUser?.jenis_kelamin
         // Asumsi 'P' untuk Perempuan
-        imageProvider = NetworkImage(
+        imageProvider = const NetworkImage(
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTePvPIcfgyTA_2uby6QSsAG7PDe0Ai1Pv9x6cpYZYRGyxKSufwKmkibEpGZDw1fw5JUSs&usqp=CAU',
         );
       } else {
-        imageProvider = NetworkImage(
+        imageProvider = const NetworkImage(
           'https://avatar.iran.liara.run/public/boy?username=Ash',
         ); // Untuk Laki-laki atau default
       }

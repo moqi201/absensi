@@ -65,14 +65,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
                 'History',
               ), // Tidak ada label untuk item ini
               // Item Report (Index 2) - Menggunakan Icons.bar_chart
-              _buildNavItem(
-                2,
-                Icons.bar_chart, // Ikon untuk Report
-                'Stats',
-              ), // Tidak ada label untuk item ini
+              // _buildNavItem(
+              //   2,
+              //   Icons.bar_chart, // Ikon untuk Report
+              //   'Stats',
+              // ), // Tidak ada label untuk item ini
               // Item Profile (Index 3) - Menggunakan Icons.person
               _buildNavItem(
-                3,
+                2,
                 Icons.person,
                 'Profile',
               ), // Tidak ada label untuk item ini

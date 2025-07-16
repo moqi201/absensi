@@ -1,4 +1,3 @@
-import 'package:absensi/data/service/api_service.dart'; // Penting untuk inisialisasi ApiService
 import 'package:absensi/routes/app_router.dart';
 import 'package:absensi/screens/attendance/request_screen.dart';
 import 'package:absensi/screens/auth/forgot_password.dart';
@@ -8,11 +7,11 @@ import 'package:absensi/screens/auth/reset_password.dart';
 import 'package:absensi/screens/main_bottom_navigation_bar.dart';
 import 'package:absensi/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
-  // Tambahkan async
   WidgetsFlutterBinding.ensureInitialized();
-  await ApiService.init(); // Inisialisasi ApiService untuk persistensi token
+  await initializeDateFormatting('id_ID', null);
   runApp(const MyApp());
 }
 

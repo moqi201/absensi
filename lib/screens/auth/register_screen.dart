@@ -217,12 +217,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: ClipPath(
               clipper: WaveClipper(), // Custom clipper for the wave shape
               child: Container(
-                height: 200, // Height of the wave section
+                height: 250, // Height of the wave section
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       AppColors.primary,
-                      AppColors.accentRed,
+                      AppColors.primary.withOpacity(0.8),
                     ], // Use a gradient for a richer look
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -252,7 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: 120, // Adjust width as needed
                       ),
                     ),
-                    const SizedBox(height: 30), // Spacing after the logo
+                    const SizedBox(height: 36), // Spacing after the logo
                     // --- End Logo Section ---
                     Text(
                       "Create Account",
@@ -444,9 +444,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Display Batch Name (not a dropdown) with Shadow
                     _isLoading
                         ? const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
+                          // child: CircularProgressIndicator(
+                          //   color: AppColors.primary,
+                          // ),
                         )
                         : Container(
                           padding: const EdgeInsets.symmetric(

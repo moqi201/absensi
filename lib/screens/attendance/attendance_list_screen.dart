@@ -186,7 +186,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         title: const Text(
-          'Attendance History',
+          'History Absen',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
@@ -205,7 +205,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Attendance Monthly',
+                  'Absen Bulan Ini',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -228,6 +228,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                         Text(
                           DateFormat(
                             'MMMM yyyy',
+                            'id_ID',
                           ).format(_selectedMonth).toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -250,26 +251,40 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           // Kalender
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ), // Consistent padding
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(
+                12,
+              ), // Slightly more rounded corners
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withOpacity(
+                    0.15,
+                  ), // Slightly more pronounced shadow for depth
                   spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(0, 3),
+                  blurRadius: 7, // Increased blur for a softer shadow
+                  offset: const Offset(
+                    0,
+                    4,
+                  ), // Shifted shadow down for better effect
                 ),
               ],
             ),
             child: Column(
               children: [
+                // --- Month Navigation Header ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.chevron_left),
+                      icon: const Icon(
+                        Icons.chevron_left,
+                        color: AppColors.textDark,
+                      ), // Darker icon for better contrast
                       onPressed: () {
                         setState(() {
                           _selectedMonth = DateTime(
@@ -277,20 +292,27 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             _selectedMonth.month - 1,
                             1,
                           );
-                          _selectedDay = null;
+                          _selectedDay =
+                              null; // Clear selected day when changing month
                         });
                         _refreshList();
                       },
+                      splashRadius:
+                          24.0, // Reduce splash radius for a cleaner tap effect
                     ),
                     Text(
-                      DateFormat('MMMM yyyy').format(_selectedMonth),
+                      DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth),
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 18, // Slightly larger font for month/year
                         fontWeight: FontWeight.bold,
+                        color: AppColors.textDark, // Ensure good contrast
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.chevron_right),
+                      icon: const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.textDark,
+                      ), // Darker icon
                       onPressed: () {
                         setState(() {
                           _selectedMonth = DateTime(
@@ -298,41 +320,55 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             _selectedMonth.month + 1,
                             1,
                           );
-                          _selectedDay = null;
+                          _selectedDay =
+                              null; // Clear selected day when changing month
                         });
                         _refreshList();
                       },
+                      splashRadius: 24.0, // Reduce splash radius
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                // Days of the week header
+                const SizedBox(
+                  height: 12,
+                ), // Increased spacing after month navigation
+                // --- Days of the Week Header ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: List.generate(7, (index) {
                     final List<String> weekdays = [
-                      'Sun',
-                      'Mon',
-                      'Tue',
-                      'Wed',
-                      'Thu',
-                      'Fri',
-                      'Sat',
+                      'Min', // Changed to Indonesian "Minggu" abbreviation
+                      'Sen', // "Senin"
+                      'Sel', // "Selasa"
+                      'Rab', // "Rabu"
+                      'Kam', // "Kamis"
+                      'Jum', // "Jumat"
+                      'Sab', // "Sabtu"
                     ];
                     return Expanded(
                       child: Center(
                         child: Text(
                           weekdays[index],
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color:
+                                (index == 0 || index == 6)
+                                    ? AppColors.accentRed
+                                    : AppColors
+                                        .primary, // Weekends in red (Sun/Sat)
+                            fontSize:
+                                13, // Slightly smaller for weekday headers
                           ),
                         ),
                       ),
                     );
                   }),
                 ),
-                const Divider(),
+                const Divider(
+                  height: 20,
+                  thickness: 1.0,
+                  color: Colors.grey,
+                ), // Thinner, lighter divider
                 // Calendar grid
                 FutureBuilder<List<Absence>>(
                   future: _attendanceFuture,
@@ -344,6 +380,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       return Center(
                         child: Text(
                           'Error loading calendar: ${snapshot.error}',
+                          style: const TextStyle(
+                            color: Colors.red,
+                          ), // Error text in red
                         ),
                       );
                     }
@@ -354,22 +393,25 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                         abs.attendanceDate?.day ?? 0: abs,
                     };
 
+                    // Calculate days in month and first day's weekday
                     final int daysInMonth =
                         DateTime(
                           _selectedMonth.year,
                           _selectedMonth.month + 1,
-                          0,
+                          0, // Day 0 of the next month gives the last day of the current month
                         ).day;
+
+                    // `_selectedMonth.weekday` returns 1 (Monday) to 7 (Sunday).
+                    // We want Sunday to be the start of the week (index 0 for display).
+                    // Adjust to 0 for Sunday, 1 for Monday, etc.
                     final int firstDayWeekday =
-                        _selectedMonth.weekday == 7
-                            ? 0
-                            : _selectedMonth.weekday; // Adjust Sunday to 0
+                        _selectedMonth.copyWith(day: 1).weekday % 7;
 
                     List<Widget> dayWidgets = [];
 
                     // Add empty cells for days before the 1st of the month
                     for (int i = 0; i < firstDayWeekday; i++) {
-                      dayWidgets.add(Expanded(child: Container()));
+                      dayWidgets.add(Container()); // Just an empty container
                     }
 
                     // Add day cells
@@ -390,93 +432,130 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                           _selectedDay!.day == currentDate.day;
                       final Absence? dayAttendance = attendanceMap[day];
 
-                      Color dayColor = AppColors.textDark;
+                      Color dayColor =
+                          AppColors.textDark; // Default day number color
                       Color dotColor = Colors.transparent;
                       FontWeight fontWeight = FontWeight.normal;
 
+                      // Determine dot color and font weight based on attendance status
                       if (dayAttendance != null) {
                         if (dayAttendance.status?.toLowerCase() == 'izin') {
                           dotColor = AppColors.accentOrange;
-                          fontWeight = FontWeight.bold;
+                          fontWeight =
+                              FontWeight
+                                  .w600; // Slightly bolder for attendance days
                         } else if (dayAttendance.status?.toLowerCase() ==
                             'late') {
                           dotColor = AppColors.accentRed;
-                          fontWeight = FontWeight.bold;
+                          fontWeight = FontWeight.w600;
                         } else if (dayAttendance.status?.toLowerCase() ==
                             'masuk') {
                           dotColor = AppColors.accentGreen;
-                          fontWeight = FontWeight.bold;
+                          fontWeight = FontWeight.w600;
                         }
                       }
 
+                      // Override colors/font for 'Today' and 'Selected' states
                       if (isToday) {
-                        dayColor = AppColors.primary;
+                        dayColor =
+                            isSelected ? Colors.white : AppColors.primary;
                         fontWeight = FontWeight.bold;
                       }
                       if (isSelected) {
                         dayColor = Colors.white;
                       }
+                      // Set weekend day color if it's not today and not selected
+                      if (!isToday &&
+                          !isSelected &&
+                          (currentDate.weekday == DateTime.sunday ||
+                              currentDate.weekday == DateTime.saturday)) {
+                        dayColor = AppColors.accentRed;
+                      }
 
                       dayWidgets.add(
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedDay = currentDate;
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color:
-                                    isSelected
-                                        ? AppColors.primary
-                                        : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '$day',
-                                    style: TextStyle(
-                                      color: dayColor,
-                                      fontWeight: fontWeight,
-                                    ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedDay = currentDate;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(
+                              4,
+                            ), // Consistent margin for each day cell
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected
+                                      ? AppColors
+                                          .primary // Primary color for selected day background
+                                      : (isToday && !isSelected)
+                                      ? AppColors.primary.withOpacity(0.1)
+                                      : Colors
+                                          .transparent, // Subtle highlight for today if not selected
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  isToday &&
+                                          !isSelected // Add a subtle border for today if not selected
+                                      ? Border.all(
+                                        color: AppColors.primary,
+                                        width: 1.0,
+                                      )
+                                      : null,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '$day',
+                                  style: TextStyle(
+                                    color: dayColor,
+                                    fontWeight: fontWeight,
+                                    fontSize:
+                                        15, // Standard font size for day numbers
                                   ),
-                                  if (dotColor != Colors.transparent)
-                                    Container(
-                                      width: 5,
-                                      height: 5,
+                                ),
+                                if (dotColor !=
+                                    Colors
+                                        .transparent) // Only show dot if there's attendance status
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 2.0,
+                                    ), // Small padding above dot
+                                    child: Container(
+                                      width: 6, // Slightly larger dot
+                                      height: 6,
                                       decoration: BoxDecoration(
                                         color: dotColor,
                                         shape: BoxShape.circle,
                                       ),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
                       );
                     }
 
-                    // Arrange days into rows
-                    List<Row> calendarRows = [];
-                    for (int i = 0; i < dayWidgets.length; i += 7) {
-                      calendarRows.add(
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: dayWidgets.sublist(
-                            i,
-                            i + 7 > dayWidgets.length
-                                ? dayWidgets.length
-                                : i + 7,
+                    // --- The Fix: Using GridView.builder for proper calendar layout ---
+                    return GridView.builder(
+                      shrinkWrap:
+                          true, // Important: allows GridView to take only required space
+                      physics:
+                          const NeverScrollableScrollPhysics(), // Disable GridView scrolling
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7, // 7 days in a week
+                            childAspectRatio: 1.0, // Make cells square
+                            crossAxisSpacing:
+                                2.0, // Small spacing between columns
+                            mainAxisSpacing: 2.0, // Small spacing between rows
                           ),
-                        ),
-                      );
-                    }
-                    return Column(children: calendarRows);
+                      itemCount: dayWidgets.length,
+                      itemBuilder: (context, index) {
+                        return dayWidgets[index];
+                      },
+                    );
                   },
                 ),
               ],
@@ -489,8 +568,8 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
             ),
             child: Text(
               _selectedDay != null
-                  ? 'Your Attendance on ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}'
-                  : 'Your Attendance',
+                  ? 'History on ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}'
+                  : 'Hitory',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -534,8 +613,8 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                     return Center(
                       child: Text(
                         _selectedDay != null
-                            ? 'No attendance records found for ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}.'
-                            : 'No attendance records found for ${DateFormat('MMMM yyyy').format(_selectedMonth)}.',
+                            ? 'Tidak ada absen ${DateFormat('E, MMM d, yyyy', 'id_ID').format(_selectedDay!)}.'
+                            : 'Tidak ada absen ${DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth)}.',
                       ),
                     );
                   }
