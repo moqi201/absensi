@@ -415,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Mengubah _calculateWorkingHours untuk menerima AbsenceToday
   String _calculateWorkingHours(AbsenceToday? absence) {
     if (absence == null || absence.jamMasuk == null) {
-      return '00:00:00';
+      return '00:00';
     }
 
     final DateTime checkInDateTime = absence.jamMasuk!;
@@ -782,7 +782,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 4,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(17.0),
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.center, // Pusatkan untuk kartu-kartu ini
@@ -801,7 +801,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 20, // Sedikit lebih kecil untuk ketiga ini
+                  fontSize: 16, // Sedikit lebih kecil untuk ketiga ini
                   fontWeight: FontWeight.bold,
                   color: iconColor,
                 ),

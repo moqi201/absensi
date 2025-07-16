@@ -238,356 +238,360 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Padding(
               // Apply padding directly to the content
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Adjust spacing at the top to account for the wave
-                    // Increased space for the wave effect
-                    // --- Logo Section ---
-                    Center(
-                      child: Image.asset(
-                        'assets/images/logo.png', // Path to your logo image
-                        height: 120, // Adjust height as needed
-                        width: 120, // Adjust width as needed
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Adjust spacing at the top to account for the wave
+                      // Increased space for the wave effect
+                      // --- Logo Section ---
+                      Center(
+                        child: Image.asset(
+                          'assets/images/logo.png', // Path to your logo image
+                          height: 120, // Adjust height as needed
+                          width: 120, // Adjust width as needed
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 36), // Spacing after the logo
-                    // --- End Logo Section ---
-                    Text(
-                      "Buat Akun Baru",
-                      style: AppTextStyles.heading.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 28,
+                      const SizedBox(height: 36), // Spacing after the logo
+                      // --- End Logo Section ---
+                      Text(
+                        "Buat Akun Baru",
+                        style: AppTextStyles.heading.copyWith(
+                          color: AppColors.primary,
+                          fontSize: 28,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Username Input Field with Shadow
-                    Container(
-                      decoration: BoxDecoration(
-                        // Removed borderRadius from here
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                      // Username Input Field with Shadow
+                      Container(
+                        decoration: BoxDecoration(
+                          // Removed borderRadius from here
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: CustomInputField(
+                          controller: _nameController,
+                          hintText: "Name",
+                          icon: Icons.person_outline,
+                          // Removed borderRadius from here
+                          customValidator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Name cannot be empty';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      child: CustomInputField(
-                        controller: _nameController,
-                        hintText: "Name",
-                        icon: Icons.person_outline,
-                        // Removed borderRadius from here
-                        customValidator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Name cannot be empty';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Email Input Field with Shadow
-                    Container(
-                      decoration: BoxDecoration(
-                        // Removed borderRadius from here
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                      // Email Input Field with Shadow
+                      Container(
+                        decoration: BoxDecoration(
+                          // Removed borderRadius from here
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: CustomInputField(
+                          controller: _emailController,
+                          hintText: "Email",
+                          icon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          // Removed borderRadius from here
+                          customValidator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Email cannot be empty';
+                            }
+                            if (!RegExp(
+                              r'^[^@]+@[^@]+\.[^@]+',
+                            ).hasMatch(value)) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      child: CustomInputField(
-                        controller: _emailController,
-                        hintText: "Email",
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        // Removed borderRadius from here
-                        customValidator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email cannot be empty';
-                          }
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                            return 'Enter a valid email address';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Password Input Field with Shadow
-                    Container(
-                      decoration: BoxDecoration(
-                        // Removed borderRadius from here
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                      // Password Input Field with Shadow
+                      Container(
+                        decoration: BoxDecoration(
+                          // Removed borderRadius from here
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: CustomInputField(
+                          controller: _passwordController,
+                          hintText: "Password",
+                          icon: Icons.lock_outline,
+                          isPassword: true,
+                          obscureText: !_isPasswordVisible,
+                          // Removed borderRadius from here
+                          toggleVisibility:
+                              () => setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              }),
+                          customValidator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Password cannot be empty';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters long';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      child: CustomInputField(
-                        controller: _passwordController,
-                        hintText: "Password",
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                        obscureText: !_isPasswordVisible,
-                        // Removed borderRadius from here
-                        toggleVisibility:
-                            () => setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            }),
-                        customValidator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password cannot be empty';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters long';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Removed Confirm Password Field
-                    // Container(
-                    //   decoration: const BoxDecoration(
-                    //     boxShadow: [
-                    //       BoxShadow(
-                    //         color: Colors.grey.withOpacity(0.2),
-                    //         spreadRadius: 2,
-                    //         blurRadius: 5,
-                    //         offset: Offset(0, 3),
-                    //       ),
-                    //     ],
-                    //   ),
-                    //   child: CustomInputField(
-                    //     controller: _confirmPasswordController,
-                    //     hintText: "Confirm Password",
-                    //     icon: Icons.lock_outline,
-                    //     isPassword: true,
-                    //     obscureText: !_isConfirmPasswordVisible,
-                    //     toggleVisibility:
-                    //         () => setState(() {
-                    //           _isConfirmPasswordVisible =
-                    //               !_isConfirmPasswordVisible;
-                    //         }),
-                    //     customValidator: (value) {
-                    //       if (value == null || value.isEmpty) {
-                    //         return 'Confirm password cannot be empty';
-                    //       }
-                    //       if (value != _passwordController.text) {
-                    //         return 'Passwords do not match';
-                    //       }
-                    //       return null;
-                    //     },
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 16),
+                      // Removed Confirm Password Field
+                      // Container(
+                      //   decoration: const BoxDecoration(
+                      //     boxShadow: [
+                      //       BoxShadow(
+                      //         color: Colors.grey.withOpacity(0.2),
+                      //         spreadRadius: 2,
+                      //         blurRadius: 5,
+                      //         offset: Offset(0, 3),
+                      //       ),
+                      //     ],
+                      //   ),
+                      //   child: CustomInputField(
+                      //     controller: _confirmPasswordController,
+                      //     hintText: "Confirm Password",
+                      //     icon: Icons.lock_outline,
+                      //     isPassword: true,
+                      //     obscureText: !_isConfirmPasswordVisible,
+                      //     toggleVisibility:
+                      //         () => setState(() {
+                      //           _isConfirmPasswordVisible =
+                      //               !_isConfirmPasswordVisible;
+                      //         }),
+                      //     customValidator: (value) {
+                      //       if (value == null || value.isEmpty) {
+                      //         return 'Confirm password cannot be empty';
+                      //       }
+                      //       if (value != _passwordController.text) {
+                      //         return 'Passwords do not match';
+                      //       }
+                      //       return null;
+                      //     },
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 16),
 
-                    // Jenis Kelamin Dropdown with Shadow
-                    Container(
-                      decoration: BoxDecoration(
-                        // Removed borderRadius from here
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
+                      // Jenis Kelamin Dropdown with Shadow
+                      Container(
+                        decoration: BoxDecoration(
+                          // Removed borderRadius from here
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: CustomDropdownInputField<String>(
+                          labelText: 'Pilih Jenis Kelamin',
+                          hintText: 'Pilih Jenis Kelamin',
+                          icon: Icons.people_outline,
+                          value: _selectedGender,
+                          // Removed borderRadius from here
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'L',
+                              child: Text('Laki-laki'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'P',
+                              child: Text('Perempuan'),
+                            ),
+                          ],
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedGender = newValue;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Tolong Pilih Jenis Kelamin';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      child: CustomDropdownInputField<String>(
-                        labelText: 'Pilih Jenis Kelamin',
-                        hintText: 'Pilih Jenis Kelamin',
-                        icon: Icons.people_outline,
-                        value: _selectedGender,
-                        // Removed borderRadius from here
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'L',
-                            child: Text('Laki-laki'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'P',
-                            child: Text('Perempuan'),
-                          ),
-                        ],
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedGender = newValue;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Tolong Pilih Jenis Kelamin';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Display Batch Name (not a dropdown) with Shadow
-                    _isLoading
-                        ? const Center(
-                          // child: CircularProgressIndicator(
-                          //   color: AppColors.primary,
-                          // ),
-                        )
-                        : Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 18,
-                          ),
-                          decoration: BoxDecoration(
-                            // Removed borderRadius from here
-                            color: AppColors.inputFill,
-                            border: Border.all(color: AppColors.border),
-                            boxShadow: [
-                              // Add shadow here
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.group_outlined,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _selectedBatchName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: AppColors.textDark,
+                      // Display Batch Name (not a dropdown) with Shadow
+                      _isLoading
+                          ? const Center(
+                            // child: CircularProgressIndicator(
+                            //   color: AppColors.primary,
+                            // ),
+                          )
+                          : Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 18,
+                            ),
+                            decoration: BoxDecoration(
+                              // Removed borderRadius from here
+                              color: AppColors.inputFill,
+                              border: Border.all(color: AppColors.border),
+                              boxShadow: [
+                                // Add shadow here
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.group_outlined,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _selectedBatchName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: AppColors.textDark,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    const SizedBox(height: 16),
-
-                    // Training Dropdown using CustomDropdownInputField with Shadow
-                    _isLoading
-                        ? const SizedBox.shrink()
-                        : Container(
-                          decoration: BoxDecoration(
-                            // Removed borderRadius from here
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.2),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: CustomDropdownInputField<int>(
-                            labelText: 'Pilih Pelatihan',
-                            hintText: 'Pilih Pelatihan',
-                            icon: Icons.school_outlined,
-                            value: _selectedTrainingId,
-                            // Removed borderRadius from here
-                            items:
-                                _trainings.map((training) {
-                                  return DropdownMenuItem<int>(
-                                    value: training.id,
-                                    child: Text(training.title),
-                                  );
-                                }).toList(),
-                            onChanged: (int? newValue) {
-                              setState(() {
-                                _selectedTrainingId = newValue;
-                              });
-                            },
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Tolong Pilih Pelatihan';
-                              }
-                              return null;
-                            },
-                            menuMaxHeight: 300.0, // Apply menuMaxHeight here
-                          ),
-                        ),
-                    const SizedBox(height: 32),
-
-                    // Register Button with Shadow
-                    _isLoading
-                        ? const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
-                        )
-                        : Container(
-                          decoration: BoxDecoration(
-                            // Removed borderRadius from here
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                spreadRadius: 3,
-                                blurRadius: 7,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: PrimaryButton(
-                            label: "Register",
-                            onPressed: _register,
-                            // Removed borderRadius from here
-                          ),
-                        ),
-                    const SizedBox(height: 20),
-
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Sudah punya akun? "),
-                          GestureDetector(
-                            onTap:
-                                () => Navigator.pushReplacementNamed(
-                                  context,
-                                  AppRoutes.login,
-                                ),
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
+                              ],
                             ),
                           ),
-                        ],
+                      const SizedBox(height: 16),
+
+                      // Training Dropdown using CustomDropdownInputField with Shadow
+                      _isLoading
+                          ? const SizedBox.shrink()
+                          : Container(
+                            decoration: BoxDecoration(
+                              // Removed borderRadius from here
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: CustomDropdownInputField<int>(
+                              labelText: 'Pilih Pelatihan',
+                              hintText: 'Pilih Pelatihan',
+                              icon: Icons.school_outlined,
+                              value: _selectedTrainingId,
+                              // Removed borderRadius from here
+                              items:
+                                  _trainings.map((training) {
+                                    return DropdownMenuItem<int>(
+                                      value: training.id,
+                                      child: Text(training.title),
+                                    );
+                                  }).toList(),
+                              onChanged: (int? newValue) {
+                                setState(() {
+                                  _selectedTrainingId = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Tolong Pilih Pelatihan';
+                                }
+                                return null;
+                              },
+                              menuMaxHeight: 300.0, // Apply menuMaxHeight here
+                            ),
+                          ),
+                      const SizedBox(height: 32),
+
+                      // Register Button with Shadow
+                      _isLoading
+                          ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
+                          )
+                          : Container(
+                            decoration: BoxDecoration(
+                              // Removed borderRadius from here
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  spreadRadius: 3,
+                                  blurRadius: 7,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: PrimaryButton(
+                              label: "Register",
+                              onPressed: _register,
+                              // Removed borderRadius from here
+                            ),
+                          ),
+                      const SizedBox(height: 20),
+
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Sudah punya akun? "),
+                            GestureDetector(
+                              onTap:
+                                  () => Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRoutes.login,
+                                  ),
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ), // Add some space before the copyright
-                    Center(child: CopyrightText()),
-                    // --- END ADDITION ---
-                  ],
+                      const SizedBox(
+                        height: 20,
+                      ), // Add some space before the copyright
+                      Center(child: CopyrightText()),
+                      // --- END ADDITION ---
+                    ],
+                  ),
                 ),
               ),
             ),
