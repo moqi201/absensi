@@ -3,6 +3,7 @@ import 'package:absensi/constants/app_text_styles.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
 import 'package:absensi/routes/app_router.dart';
+import 'package:absensi/widgets/copy_right.dart';
 import 'package:absensi/widgets/custom_dropdown_input_field.dart';
 import 'package:absensi/widgets/custom_input_field.dart';
 import 'package:absensi/widgets/primary_button.dart';
@@ -255,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 36), // Spacing after the logo
                     // --- End Logo Section ---
                     Text(
-                      "Create Account",
+                      "Buat Akun Baru",
                       style: AppTextStyles.heading.copyWith(
                         color: AppColors.primary,
                         fontSize: 28,
@@ -411,8 +412,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                       child: CustomDropdownInputField<String>(
-                        labelText: 'Select Gender',
-                        hintText: 'Select Gender',
+                        labelText: 'Pilih Jenis Kelamin',
+                        hintText: 'Pilih Jenis Kelamin',
                         icon: Icons.people_outline,
                         value: _selectedGender,
                         // Removed borderRadius from here
@@ -433,7 +434,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         },
                         validator: (value) {
                           if (value == null) {
-                            return 'Please select your gender';
+                            return 'Tolong Pilih Jenis Kelamin';
                           }
                           return null;
                         },
@@ -504,8 +505,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ],
                           ),
                           child: CustomDropdownInputField<int>(
-                            labelText: 'Select Training',
-                            hintText: 'Select Training',
+                            labelText: 'Pilih Pelatihan',
+                            hintText: 'Pilih Pelatihan',
                             icon: Icons.school_outlined,
                             value: _selectedTrainingId,
                             // Removed borderRadius from here
@@ -523,7 +524,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                             validator: (value) {
                               if (value == null) {
-                                return 'Please select a training';
+                                return 'Tolong Pilih Pelatihan';
                               }
                               return null;
                             },
@@ -563,7 +564,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Already have an account? "),
+                          const Text("Sudah punya akun? "),
                           GestureDetector(
                             onTap:
                                 () => Navigator.pushReplacementNamed(
@@ -581,6 +582,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(
+                      height: 20,
+                    ), // Add some space before the copyright
+                    Center(child: CopyrightText()),
+                    // --- END ADDITION ---
                   ],
                 ),
               ),

@@ -4,6 +4,7 @@ import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
 import 'package:absensi/screens/main_bottom_navigation_bar.dart';
+import 'package:absensi/widgets/copy_right.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart'; // Untuk reverse geocoding
 import 'package:geolocator/geolocator.dart'; // Untuk geolocation
@@ -704,7 +705,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconColor: AppColors.primary,
                         ),
                         _buildAttendanceStatCard(
-                          title: 'Total Hrs',
+                          title: 'Total Jam',
                           value: _calculateWorkingHours(_todayAbsence),
                           icon: Icons.timelapse,
                           iconColor: AppColors.primary,
@@ -745,7 +746,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(20.0),
-                          child: Text('No attendance history available.'),
+                          child: Text('Ops! Tidak ada riwayat absen.'),
                         ),
                       )
                     else
@@ -753,8 +754,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ..._attendanceHistory.take(5).map((absence) {
                         return _buildAttendanceHistoryItem(absence);
                       }),
+                    const SizedBox(height: 20),
                     const SizedBox(
-                      height: 80,
+                      height: 60,
+                      child: CopyrightText(),
                     ), // Untuk memberikan ruang bagi tombol "Request"
                   ]),
                 ),

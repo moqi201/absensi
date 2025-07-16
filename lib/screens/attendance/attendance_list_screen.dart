@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:absensi/constants/app_colors.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
+import 'package:absensi/widgets/copy_right.dart';
 import 'package:absensi/widgets/custom_card_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -18,8 +19,7 @@ class AttendanceListScreen extends StatefulWidget {
 
 class _AttendanceListScreenState extends State<AttendanceListScreen> {
   final ApiService _apiService = ApiService();
-  late Future<List<Absence>>
-  _attendanceFuture; // Changed to Future<List<Absence>>
+  late Future<List<Absence>> _attendanceFuture;
 
   DateTime _selectedMonth = DateTime(
     DateTime.now().year,
@@ -27,7 +27,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     1,
   );
 
-  // Tambahkan state untuk tanggal yang dipilih di kalender (jika ada)
   DateTime? _selectedDay;
 
   @override
@@ -54,15 +53,10 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   }
 
   Future<List<Absence>> _fetchAndFilterAttendances() async {
-    // Format the start and end dates for the API call
     final String startDate = DateFormat('yyyy-MM-01').format(_selectedMonth);
-    final String endDate = DateFormat('yyyy-MM-dd').format(
-      DateTime(
-        _selectedMonth.year,
-        _selectedMonth.month + 1,
-        0,
-      ), // Last day of the month
-    );
+    final String endDate = DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0));
 
     try {
       final ApiResponse<List<Absence>> response = await _apiService
@@ -70,17 +64,11 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
       if (response.statusCode == 200 && response.data != null) {
         final List<Absence> fetchedAbsences = response.data!;
-        // Sort by attendanceDate in descending order (latest first)
         fetchedAbsences.sort((a, b) {
-          // Handle null attendanceDate dates: nulls come last
           if (a.attendanceDate == null && b.attendanceDate == null) return 0;
-          if (a.attendanceDate == null)
-            return 1; // a is null, b is not, a comes after b
-          if (b.attendanceDate == null)
-            return -1; // b is null, a is not, b comes after a
-          return b.attendanceDate!.compareTo(
-            a.attendanceDate!,
-          ); // Both are non-null, compare
+          if (a.attendanceDate == null) return 1;
+          if (b.attendanceDate == null) return -1;
+          return b.attendanceDate!.compareTo(a.attendanceDate!);
         });
         return fetchedAbsences;
       } else {
@@ -88,13 +76,12 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       }
     } catch (e) {
       print('Error fetching and filtering attendance list: $e');
-      // Show a SnackBar for the error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load attendance: $e')),
         );
       }
-      return []; // Return an empty list on error
+      return [];
     }
   }
 
@@ -134,7 +121,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           newSelectedMonth.month != _selectedMonth.month) {
         setState(() {
           _selectedMonth = newSelectedMonth;
-          _selectedDay = null; // Reset selected day when month changes
+          _selectedDay = null;
         });
         _refreshList();
       }
@@ -143,7 +130,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
   String _calculateWorkingHoursForHistory(Absence absence) {
     if (absence.checkIn == null || absence.checkOut == null) {
-      return '00:00:00'; // Jika belum check-out atau data tidak lengkap
+      return '00:00:00';
     }
 
     try {
@@ -160,8 +147,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   }
 
   Widget _buildTimeColumn(String time, String label, Color color) {
-    // This helper is no longer used directly in _buildAttendanceTile as its content is inlined.
-    // Keeping it here for reference or if it's used elsewhere.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -205,7 +190,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Absen Bulan Ini',
+                  'Ringkasan Bulan Ini',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -248,35 +233,26 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               ],
             ),
           ),
-          // Kalender
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
               vertical: 12.0,
-            ), // Consistent padding
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(
-                12,
-              ), // Slightly more rounded corners
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(
-                    0.15,
-                  ), // Slightly more pronounced shadow for depth
+                  color: Colors.grey.withOpacity(0.15),
                   spreadRadius: 1,
-                  blurRadius: 7, // Increased blur for a softer shadow
-                  offset: const Offset(
-                    0,
-                    4,
-                  ), // Shifted shadow down for better effect
+                  blurRadius: 7,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Column(
               children: [
-                // --- Month Navigation Header ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -284,7 +260,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       icon: const Icon(
                         Icons.chevron_left,
                         color: AppColors.textDark,
-                      ), // Darker icon for better contrast
+                      ),
                       onPressed: () {
                         setState(() {
                           _selectedMonth = DateTime(
@@ -292,27 +268,25 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             _selectedMonth.month - 1,
                             1,
                           );
-                          _selectedDay =
-                              null; // Clear selected day when changing month
+                          _selectedDay = null;
                         });
                         _refreshList();
                       },
-                      splashRadius:
-                          24.0, // Reduce splash radius for a cleaner tap effect
+                      splashRadius: 24.0,
                     ),
                     Text(
                       DateFormat('MMMM yyyy', 'id_ID').format(_selectedMonth),
                       style: const TextStyle(
-                        fontSize: 18, // Slightly larger font for month/year
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark, // Ensure good contrast
+                        color: AppColors.textDark,
                       ),
                     ),
                     IconButton(
                       icon: const Icon(
                         Icons.chevron_right,
                         color: AppColors.textDark,
-                      ), // Darker icon
+                      ),
                       onPressed: () {
                         setState(() {
                           _selectedMonth = DateTime(
@@ -320,30 +294,26 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             _selectedMonth.month + 1,
                             1,
                           );
-                          _selectedDay =
-                              null; // Clear selected day when changing month
+                          _selectedDay = null;
                         });
                         _refreshList();
                       },
-                      splashRadius: 24.0, // Reduce splash radius
+                      splashRadius: 24.0,
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 12,
-                ), // Increased spacing after month navigation
-                // --- Days of the Week Header ---
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: List.generate(7, (index) {
                     final List<String> weekdays = [
-                      'Min', // Changed to Indonesian "Minggu" abbreviation
-                      'Sen', // "Senin"
-                      'Sel', // "Selasa"
-                      'Rab', // "Rabu"
-                      'Kam', // "Kamis"
-                      'Jum', // "Jumat"
-                      'Sab', // "Sabtu"
+                      'Min',
+                      'Sen',
+                      'Sel',
+                      'Rab',
+                      'Kam',
+                      'Jum',
+                      'Sab',
                     ];
                     return Expanded(
                       child: Center(
@@ -354,22 +324,15 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             color:
                                 (index == 0 || index == 6)
                                     ? AppColors.accentRed
-                                    : AppColors
-                                        .primary, // Weekends in red (Sun/Sat)
-                            fontSize:
-                                13, // Slightly smaller for weekday headers
+                                    : AppColors.primary,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                     );
                   }),
                 ),
-                const Divider(
-                  height: 20,
-                  thickness: 1.0,
-                  color: Colors.grey,
-                ), // Thinner, lighter divider
-                // Calendar grid
+                const Divider(height: 20, thickness: 1.0, color: Colors.grey),
                 FutureBuilder<List<Absence>>(
                   future: _attendanceFuture,
                   builder: (context, snapshot) {
@@ -380,9 +343,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       return Center(
                         child: Text(
                           'Error loading calendar: ${snapshot.error}',
-                          style: const TextStyle(
-                            color: Colors.red,
-                          ), // Error text in red
+                          style: const TextStyle(color: Colors.red),
                         ),
                       );
                     }
@@ -393,28 +354,22 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                         abs.attendanceDate?.day ?? 0: abs,
                     };
 
-                    // Calculate days in month and first day's weekday
                     final int daysInMonth =
                         DateTime(
                           _selectedMonth.year,
                           _selectedMonth.month + 1,
-                          0, // Day 0 of the next month gives the last day of the current month
+                          0,
                         ).day;
 
-                    // `_selectedMonth.weekday` returns 1 (Monday) to 7 (Sunday).
-                    // We want Sunday to be the start of the week (index 0 for display).
-                    // Adjust to 0 for Sunday, 1 for Monday, etc.
                     final int firstDayWeekday =
                         _selectedMonth.copyWith(day: 1).weekday % 7;
 
                     List<Widget> dayWidgets = [];
 
-                    // Add empty cells for days before the 1st of the month
                     for (int i = 0; i < firstDayWeekday; i++) {
-                      dayWidgets.add(Container()); // Just an empty container
+                      dayWidgets.add(Container());
                     }
 
-                    // Add day cells
                     for (int day = 1; day <= daysInMonth; day++) {
                       final DateTime currentDate = DateTime(
                         _selectedMonth.year,
@@ -432,18 +387,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                           _selectedDay!.day == currentDate.day;
                       final Absence? dayAttendance = attendanceMap[day];
 
-                      Color dayColor =
-                          AppColors.textDark; // Default day number color
+                      Color dayColor = AppColors.textDark;
                       Color dotColor = Colors.transparent;
                       FontWeight fontWeight = FontWeight.normal;
 
-                      // Determine dot color and font weight based on attendance status
                       if (dayAttendance != null) {
                         if (dayAttendance.status?.toLowerCase() == 'izin') {
                           dotColor = AppColors.accentOrange;
-                          fontWeight =
-                              FontWeight
-                                  .w600; // Slightly bolder for attendance days
+                          fontWeight = FontWeight.w600;
                         } else if (dayAttendance.status?.toLowerCase() ==
                             'late') {
                           dotColor = AppColors.accentRed;
@@ -455,7 +406,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                         }
                       }
 
-                      // Override colors/font for 'Today' and 'Selected' states
                       if (isToday) {
                         dayColor =
                             isSelected ? Colors.white : AppColors.primary;
@@ -464,7 +414,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       if (isSelected) {
                         dayColor = Colors.white;
                       }
-                      // Set weekend day color if it's not today and not selected
                       if (!isToday &&
                           !isSelected &&
                           (currentDate.weekday == DateTime.sunday ||
@@ -480,22 +429,17 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                             });
                           },
                           child: Container(
-                            margin: const EdgeInsets.all(
-                              4,
-                            ), // Consistent margin for each day cell
+                            margin: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color:
                                   isSelected
-                                      ? AppColors
-                                          .primary // Primary color for selected day background
+                                      ? AppColors.primary
                                       : (isToday && !isSelected)
                                       ? AppColors.primary.withOpacity(0.1)
-                                      : Colors
-                                          .transparent, // Subtle highlight for today if not selected
+                                      : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                               border:
-                                  isToday &&
-                                          !isSelected // Add a subtle border for today if not selected
+                                  isToday && !isSelected
                                       ? Border.all(
                                         color: AppColors.primary,
                                         width: 1.0,
@@ -510,19 +454,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                                   style: TextStyle(
                                     color: dayColor,
                                     fontWeight: fontWeight,
-                                    fontSize:
-                                        15, // Standard font size for day numbers
+                                    fontSize: 15,
                                   ),
                                 ),
-                                if (dotColor !=
-                                    Colors
-                                        .transparent) // Only show dot if there's attendance status
+                                if (dotColor != Colors.transparent)
                                   Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: 2.0,
-                                    ), // Small padding above dot
+                                    padding: const EdgeInsets.only(top: 2.0),
                                     child: Container(
-                                      width: 6, // Slightly larger dot
+                                      width: 6,
                                       height: 6,
                                       decoration: BoxDecoration(
                                         color: dotColor,
@@ -537,19 +476,15 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       );
                     }
 
-                    // --- The Fix: Using GridView.builder for proper calendar layout ---
                     return GridView.builder(
-                      shrinkWrap:
-                          true, // Important: allows GridView to take only required space
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Disable GridView scrolling
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7, // 7 days in a week
-                            childAspectRatio: 1.0, // Make cells square
-                            crossAxisSpacing:
-                                2.0, // Small spacing between columns
-                            mainAxisSpacing: 2.0, // Small spacing between rows
+                            crossAxisCount: 7,
+                            childAspectRatio: 1.0,
+                            crossAxisSpacing: 2.0,
+                            mainAxisSpacing: 2.0,
                           ),
                       itemCount: dayWidgets.length,
                       itemBuilder: (context, index) {
@@ -568,8 +503,8 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
             ),
             child: Text(
               _selectedDay != null
-                  ? 'History on ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}'
-                  : 'Hitory',
+                  ? 'Riwayat  ${DateFormat('E, MMM d, yyyy').format(_selectedDay!)}'
+                  : 'Riwayat',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -592,7 +527,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   }
 
                   final attendances = snapshot.data ?? [];
-                  // Filter based on selected day if a day is selected
                   final List<Absence> filteredAttendances =
                       _selectedDay != null
                           ? attendances
@@ -619,22 +553,36 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredAttendances.length,
-                    itemBuilder: (context, index) {
-                      final absence = filteredAttendances[index];
-                      return CustomCardHistory(
-                        absence: absence,
-                        onDismissed: () {
-                          // Logika untuk menghapus item dari filteredAttendances
-                          // dan memperbarui UI (misalnya dengan setState)
-                          setState(() {
-                            filteredAttendances.removeAt(index);
-                          });
-                        },
-                      );
-                    },
+                  // Use Column to wrap ListView.builder and the CopyrightText
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredAttendances.length,
+                          itemBuilder: (context, index) {
+                            final absence = filteredAttendances[index];
+                            return CustomCardHistory(
+                              absence: absence,
+                              onDismissed: () {
+                                setState(() {
+                                  filteredAttendances.removeAt(index);
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      // --- MENEMPATKAN COPYRIGHT DI BAWAH CARD ---
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 16.0,
+                        ), // Beri padding atas dan bawah
+                        child:
+                            CopyrightText(), // Panggil widget CopyrightText di sini
+                      ),
+                      // --- AKHIR PENEMPATAN COPYRIGHT ---
+                    ],
                   );
                 },
               ),

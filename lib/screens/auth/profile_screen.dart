@@ -3,6 +3,7 @@ import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
 import 'package:absensi/routes/app_router.dart';
 import 'package:absensi/screens/auth/edit_profile_screen.dart';
+import 'package:absensi/widgets/copy_right.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -74,7 +75,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- START MODIFICATION ---
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -102,7 +102,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
-  // --- END MODIFICATION ---
 
   void _logout(BuildContext context) async {
     await ApiService.clearToken(); // Clear token using ApiService static method
@@ -149,23 +148,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : 'N/A';
     // Changed: profilePhotoUrl will now hold the URL/path from the API
     final String profilePhotoUrl = _currentUser?.profile_photo ?? '';
-
-    // Use training_title from API for designation (no longer explicitly displayed in new UI)
-    // final String designation = _currentUser?.training_title ?? 'Employee';
-
-    // Format the joinedDate based on batch.start_date from User model (no longer displayed in new UI)
-    // String formattedJoinedDate = 'N/A';
-    // if (_currentUser?.batch?.startDate != null) {
-    //   try {
-    //     final DateTime startDate = DateTime.parse(
-    //       _currentUser!.batch!.startDate!,
-    //     );
-    //     formattedJoinedDate = DateFormat('MMM dd, yyyy').format(startDate);
-    //   } catch (e) {
-    //     print('Error parsing batch start date: $e');
-    //     formattedJoinedDate = 'N/A';
-    //   }
-    // }
 
     return Scaffold(
       backgroundColor: Colors.white, // Set background to white
@@ -236,49 +218,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       jenisKelamin, // Pass jenisKelamin
                     ),
                     const SizedBox(height: 20), // Space between cards
-                    // Notification Toggle Card (from image_c9db7c.png)
-                    // Padding(
-                    //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    //   child: Card(
-                    //     color: Colors.white,
-                    //     margin: EdgeInsets.zero,
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(10),
-                    //     ), // Slightly less rounded than original
-                    //     elevation: 1, // Subtle elevation
-                    //     child: ListTile(
-                    //       leading: const Icon(
-                    //         Icons.notifications,
-                    //         color: AppColors.primary,
-                    //       ),
-                    //       title: const Text(
-                    //         'Notification',
-                    //         style: TextStyle(
-                    //           fontSize: 16,
-                    //           color: AppColors.textDark,
-                    //         ),
-                    //       ),
-                    //       trailing: Switch.adaptive(
-                    //         value: _notificationEnabled,
-                    //         onChanged: (bool newValue) {
-                    //           setState(() {
-                    //             _notificationEnabled = newValue;
-                    //           });
-                    //           // Add logic to save notification preference (e.g., to UserModel or SessionManager)
-                    //         },
-                    //         activeColor: AppColors.primary,
-                    //       ),
-                    //       onTap: () {
-                    //         setState(() {
-                    //           _notificationEnabled = !_notificationEnabled;
-                    //         });
-                    //       },
-                    //     ),
-                    //   ),
-                    // ),
-                    const SizedBox(
-                      height: 10,
-                    ), // Small space between these cards
                     // Edit Profile Card (from image_c9db7c.png)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -295,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: AppColors.primary,
                           ),
                           title: const Text(
-                            'Edit Profile',
+                            'Edit Profil',
                             style: TextStyle(
                               fontSize: 16,
                               color: AppColors.textDark,
@@ -329,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: AppColors.error,
                           ),
                           title: const Text(
-                            'Logout',
+                            'Keluar',
                             style: TextStyle(
                               color: AppColors.error,
                               fontSize: 16,
@@ -340,16 +279,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             size: 18,
                             color: AppColors.textLight,
                           ),
-                          // --- START MODIFICATION ---
                           onTap:
                               () => _confirmLogout(
                                 context,
                               ), // Panggil fungsi konfirmasi logout
-                          // --- END MODIFICATION ---
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20), // Bottom spacing
+                    const SizedBox(height: 280), // Spacing after logout card
+                    // --- START ADDITION: Copyright Text ---
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: CopyrightText(), // Adjust padding as needed
+                    ),
+
+                    // --- END ADDITION ---
+                    const SizedBox(
+                      height: 20,
+                    ), // Bottom spacing for the ListView
                   ],
                 ),
               ),
@@ -429,13 +376,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildDetailRow(
                 Icons.assignment_ind_rounded,
-                'Training Title',
+                'Pelatihan',
                 training,
               ), // Added icon
               if (batchKe != null) ...[
                 // Conditionally add batch info
                 const Divider(color: AppColors.border, height: 20),
-                _buildDetailRow(Icons.group, 'Batch', batchKe), // Added icon
+                _buildDetailRow(Icons.group, 'Angkatan', batchKe), // Added icon
               ],
               const Divider(color: AppColors.border, height: 20),
               _buildDetailRow(
@@ -477,7 +424,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-
-  // The previous _buildOptionTile is now implicitly replaced by direct Card/ListTile usage for specific options.
-  // The _buildActionOptions method is no longer needed as its content is now directly in the ListView.
 }

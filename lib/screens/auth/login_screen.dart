@@ -3,6 +3,7 @@ import 'package:absensi/constants/app_text_styles.dart';
 import 'package:absensi/data/models/app_models.dart';
 import 'package:absensi/data/service/api_service.dart';
 import 'package:absensi/routes/app_router.dart';
+import 'package:absensi/widgets/copy_right.dart';
 import 'package:absensi/widgets/custom_input_field.dart';
 import 'package:absensi/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
@@ -142,10 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 60), // Spacing after the logo
                     // --- End Logo Section ---
-                    const Text("Welcome Back", style: AppTextStyles.heading),
+                    const Text(
+                      "Selamat Datang Kembali",
+                      style: AppTextStyles.heading,
+                    ),
                     const SizedBox(height: 10),
                     const Text(
-                      "Login to continue",
+                      "Login untuk melanjutkan",
                       style: AppTextStyles.normal,
                     ),
                     const SizedBox(height: 30),
@@ -228,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                         child: const Text(
-                          "Forgot Password?",
+                          "Lupa Sandi?",
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -275,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account? "),
+                        const Text("Tidak punya akun? "),
                         GestureDetector(
                           onTap:
                               () => Navigator.pushNamed(
@@ -283,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 AppRoutes.register,
                               ),
                           child: const Text(
-                            "Sign up",
+                            "Register",
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
@@ -292,6 +296,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
+                    // --- START ADDITION ---
+                    const SizedBox(
+                      height: 50,
+                    ), // Add some space before the copyright
+                    Center(child: CopyrightText()),
+                    // --- END ADDITION ---
                   ],
                 ),
               ),
